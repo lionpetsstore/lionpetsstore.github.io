@@ -1,1 +1,425 @@
 
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <title>萊恩寵物 | Lion Pet Beauty Casa</title>
+    
+    <link rel="icon" type="image/png" href="logo.jpg">
+    <meta name="theme-color" content="#F9F7F4">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Noto+Serif+TC:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/react-datepicker@4.25.0/dist/react-datepicker.min.css">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        lux: {
+                            bg: '#F9F7F4',       // V11 的象牙米白
+                            navy: '#0F2C3E',     // 品牌皇家藍
+                            gold: '#Bfa070',     // 霧面質感金
+                            gold_light: '#F4EFE6', 
+                            text: '#4A4A4A',     
+                            sub: '#999999',      
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Lato"', 'sans-serif'],
+                        serif: ['"Noto Serif TC"', 'serif'],
+                    },
+                    boxShadow: {
+                        // V12 的金框陰影
+                        'gold-rim': '0 0 0 4px #F9F7F4, 0 0 0 5px #C5A065', 
+                        // V12 的按鈕陰影
+                        'btn-float': '0 10px 30px -10px rgba(15, 44, 62, 0.08)',
+                        // V11 的內頁卡片陰影
+                        'soft': '0 10px 30px -10px rgba(191, 160, 112, 0.1)',
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'shine': 'shine 4s linear infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-6px)' },
+                        },
+                        shine: {
+                            '0%': { backgroundPosition: '200% center' },
+                            '100%': { backgroundPosition: '-200% center' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js" defer></script>
+    <script src="https://unpkg.com/lucide@latest" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-datepicker@4.25.0/dist/react-datepicker.min.js" defer></script>
+
+    <style>
+        body {
+            background-color: #F9F7F4;
+            color: #4A4A4A;
+            /* V11 背景：極淡的貴族腳印老花，應用於全域 */
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23Bfa070' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3Cpath d='M20 20c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 8c2.2 0 4-1.8 4-4h-8c0 2.2 1.8 4 4 4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        /* --- V12 的 Logo 金框 (Royal Emblem) --- */
+        .royal-emblem {
+            background: linear-gradient(135deg, #FFFFFF 0%, #FDFBF7 100%);
+            border-radius: 20px;
+            padding: 12px;
+            box-shadow: 
+                0 20px 60px -15px rgba(15, 44, 62, 0.4), /* 深色立體投影 */
+                0 0 0 1px rgba(255, 255, 255, 1) inset,   /* 內高光 */
+                0 0 0 4px #F9F7F4,                        /* 隔斷層 (同背景色) */
+                0 0 0 6px #C5A065;                        /* 最外層金框 */
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.3s ease;
+        }
+        /* 徽章上的金屬流光 */
+        .royal-emblem::after {
+            content: ''; position: absolute; inset: 0; border-radius: 20px;
+            background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.4) 50%, transparent 60%);
+            background-size: 200% 100%;
+            pointer-events: none;
+            animation: shine 6s infinite linear;
+        }
+        .royal-emblem:hover { transform: translateY(-5px); }
+
+        /* --- V12 的服務卡片按鈕 (Card Btn) --- */
+        .card-btn {
+            background: #FFFFFF;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px -10px rgba(15, 44, 62, 0.08); /* 乾淨的浮起陰影 */
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .card-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 40px -10px rgba(191, 160, 112, 0.2);
+            border-color: #C5A065; /* Hover 變金框 */
+        }
+
+        /* --- V11 的內頁卡片風格 (Card Paw) --- */
+        .card-paw {
+            background: rgba(255, 255, 255, 0.9); /* 微透明，讓背景老花透出來 */
+            backdrop-filter: blur(8px);
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 10px 25px -5px rgba(191, 160, 112, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        /* V11 的品牌按鈕 */
+        .btn-royal {
+            background: linear-gradient(135deg, #0F2C3E 0%, #1a4259 100%);
+            color: #FFF;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px -5px rgba(15, 44, 62, 0.3);
+            transition: all 0.2s;
+        }
+        .btn-royal:active { transform: scale(0.98); }
+
+        /* V11 的輸入框 */
+        .input-soft {
+            background: #F4EFE6;
+            border: 2px solid transparent;
+            border-radius: 16px;
+            transition: all 0.3s;
+            color: #0F2C3E;
+            font-family: 'Noto Serif TC', sans-serif;
+        }
+        .input-soft:focus {
+            background: #FFF;
+            border-color: #Bfa070;
+            outline: none;
+            box-shadow: 0 4px 15px rgba(191, 160, 112, 0.1);
+        }
+
+        /* Datepicker (V11 Style) */
+        .react-datepicker { border: none !important; border-radius: 20px !important; box-shadow: 0 15px 40px rgba(15,44,62,0.1) !important; font-family: 'Noto Serif TC' !important; }
+        .react-datepicker__header { background-color: #0F2C3E !important; border-radius: 20px 20px 0 0 !important; padding-top: 15px !important; }
+        .react-datepicker__current-month { color: #Bfa070 !important; font-family: 'Lato' !important; letter-spacing: 1px; }
+        .react-datepicker__day--selected { background-color: #Bfa070 !important; border-radius: 50% !important; color: #FFF !important; }
+        
+        .fade-in { animation: fadeIn 0.8s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+const Icon = ({ name, size=20, className }) => {
+    const r = useRef(null);
+    useEffect(()=>{ if(window.lucide) window.lucide.createIcons({root:r.current, attrs:{class:className}, name, nameAttr:'data-lucide'}); },[name]);
+    return <span ref={r}><i data-lucide={name} style={{width:size, height:size}}></i></span>
+}
+
+const App = () => {
+    const [page, setPage] = useState('home');
+    const [service, setService] = useState('');
+    const [sig, setSig] = useState(null);
+    const [showSig, setShowSig] = useState(false);
+    const sigRef = useRef(null);
+    const padRef = useRef(null);
+
+    useEffect(()=>{
+        if(showSig && sigRef.current){
+            const c = sigRef.current;
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            c.width = c.clientWidth * ratio; c.height = c.clientHeight * ratio;
+            c.getContext('2d').scale(ratio, ratio);
+            padRef.current = new SignaturePad(c, {penColor: '#0F2C3E', minWidth: 1.5});
+        }
+    },[showSig]);
+
+    // 首頁 (Entry View)
+    if(page === 'home') {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
+                
+                {/* 裝飾：角落的模糊毛球光暈 (V11) */}
+                <div className="absolute -top-20 -right-20 w-80 h-80 bg-lux-gold/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-lux-navy/5 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div className="w-full max-w-sm z-10 flex flex-col items-center space-y-10 fade-in">
+                    
+                    {/* --- Logo 區塊：V12 的金框，但移除皇冠 --- */}
+                    <div className="relative animate-float">
+                        <div className="royal-emblem w-[320px]">
+                            <div className="bg-white rounded-[14px] overflow-hidden border border-gray-100 relative">
+                                <img src="./logo.jpg" className="w-full h-auto object-contain" alt="Lion Pets" />
+                                {/* 內部微光澤 */}
+                                <div className="absolute inset-0 bg-gradient-to-tr from-black/5 to-transparent pointer-events-none mix-blend-overlay"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* --- 中間文字：V11 的設計 (腳印裝飾 + Hyponic) --- */}
+                    <div className="text-center space-y-2">
+                        <div className="inline-flex items-center gap-2 mb-1">
+                            <Icon name="paw-print" size={14} className="text-lux-gold opacity-60" />
+                            <span className="text-xs font-sans font-bold text-lux-gold tracking-widest uppercase">Lion Pet Beauty Casa</span>
+                            <Icon name="paw-print" size={14} className="text-lux-gold opacity-60" />
+                        </div>
+                        <h1 className="text-3xl font-serif font-black text-lux-navy tracking-wider">萊恩寵物</h1>
+                        <h2 className="text-lg font-serif font-bold text-lux-text">精品沙龍 ‧ 住宿安親</h2>
+                    </div>
+
+                    {/* V11 的 Hyponic 標籤 */}
+                    <div className="w-full px-4">
+                        <div className="bg-white/60 backdrop-blur-sm border border-lux-gold/30 rounded-2xl p-3 flex items-center justify-center gap-3 shadow-sm">
+                            <div className="bg-[#0F2C3E] p-1.5 rounded-full text-lux-gold">
+                                <Icon name="sparkles" size={14} />
+                            </div>
+                            <span className="text-xs font-serif text-lux-navy tracking-wide">
+                                指定使用 <strong>Hyponic</strong> 德國低敏認證洗劑
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* --- 服務卡片：V12 的設計 (Card Btn) --- */}
+                    <div className="w-full grid gap-5 px-2">
+                        
+                        {/* 美容按鈕 (V12 Style) */}
+                        <button onClick={()=>{setService('grooming'); setPage('form')}} 
+                            className="card-btn p-5 flex items-center gap-5 group">
+                            <div className="w-16 h-16 rounded-2xl bg-[#0F2C3E] text-lux-gold flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                <Icon name="scissors" size={26} strokeWidth={1.5} />
+                            </div>
+                            <div className="text-left flex-1">
+                                <h3 className="font-serif text-xl font-bold text-lux-navy">美容服務</h3>
+                                <p className="text-[11px] font-sans text-lux-sub mt-1 tracking-wide">頂級皮毛護理 ‧ SPA</p>
+                            </div>
+                            <div className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 group-hover:border-lux-gold group-hover:text-lux-gold group-hover:bg-lux-gold/10 transition-all">
+                                <Icon name="chevron-right" size={16} />
+                            </div>
+                        </button>
+
+                        {/* 住宿按鈕 (V12 Style) */}
+                        <button onClick={()=>{setService('boarding'); setPage('form')}} 
+                            className="card-btn p-5 flex items-center gap-5 group">
+                            <div className="w-16 h-16 rounded-2xl bg-[#C5A065] text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                <Icon name="home" size={26} strokeWidth={1.5} />
+                            </div>
+                            <div className="text-left flex-1">
+                                <h3 className="font-serif text-xl font-bold text-lux-navy">住宿安親</h3>
+                                <p className="text-[11px] font-sans text-lux-sub mt-1 tracking-wide">如家一般的溫暖陪伴</p>
+                            </div>
+                            <div className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 group-hover:border-lux-gold group-hover:text-lux-gold group-hover:bg-lux-gold/10 transition-all">
+                                <Icon name="chevron-right" size={16} />
+                            </div>
+                        </button>
+                    </div>
+
+                    <footer className="pt-6 text-center opacity-50">
+                        <div className="w-1 h-8 bg-lux-gold/30 mx-auto mb-2"></div>
+                        <p className="text-[10px] font-sans text-lux-text tracking-widest">特寵業字第 C1130686 號</p>
+                    </footer>
+                </div>
+            </div>
+        )
+    }
+
+    // 表單頁 (Form View) - 沿用 V11 風格 (Card Paw)
+    return (
+        <div className="min-h-screen relative pb-20">
+            
+            {/* Header */}
+            <div className="sticky top-0 z-50 bg-lux-bg/90 backdrop-blur-md border-b border-white shadow-sm">
+                <div className="px-6 h-18 py-4 flex justify-between items-center max-w-lg mx-auto">
+                    <button onClick={()=>setPage('home')} className="w-10 h-10 rounded-full bg-white shadow-soft flex items-center justify-center text-lux-navy hover:scale-105 transition-transform">
+                        <Icon name="arrow-left" size={20} />
+                    </button>
+                    <div className="text-center">
+                        <div className="text-[10px] font-sans font-bold text-lux-gold uppercase tracking-widest">Lion Pets</div>
+                        <div className="text-lg font-serif font-bold text-lux-navy">{service==='boarding'?'住宿契約書':'美容契約書'}</div>
+                    </div>
+                    <div className="w-10"></div>
+                </div>
+            </div>
+
+            <div className="px-6 pt-8 max-w-lg mx-auto space-y-8 fade-in">
+                
+                {/* LINE 引導 */}
+                <div className="bg-white rounded-[24px] p-6 shadow-soft border-l-[6px] border-[#06C755] flex items-center gap-4 relative overflow-hidden">
+                    <div className="absolute right-[-10px] bottom-[-10px] text-[#06C755] opacity-5">
+                        <Icon name="message-circle" size={80} />
+                    </div>
+                    <div className="shrink-0 bg-[#06C755]/10 p-3 rounded-full text-[#06C755]">
+                        <Icon name="message-circle" size={24} />
+                    </div>
+                    <div className="flex-1 relative z-10">
+                        <h3 className="font-serif font-bold text-lux-navy text-base">加入官方 LINE</h3>
+                        <p className="text-xs text-gray-500 mt-1">請務必加入並傳送貼圖。</p>
+                    </div>
+                    <button className="px-5 py-2.5 bg-[#06C755] text-white text-xs font-bold rounded-xl shadow-md hover:bg-[#05b34c] transition-colors relative z-10">
+                        加入
+                    </button>
+                </div>
+
+                {/* 飼主資料 */}
+                <section className="space-y-3">
+                    <div className="flex items-center gap-2 pl-2">
+                        <Icon name="user" size={16} className="text-lux-gold"/>
+                        <h3 className="font-serif font-bold text-lux-navy text-lg">飼主資料</h3>
+                    </div>
+                    <div className="card-paw p-6 space-y-5 bg-white/90">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-lux-sub tracking-wider ml-1">姓名 <span className="font-sans font-normal opacity-50">Name</span></label>
+                            <input className="w-full input-soft px-4 py-3 text-sm" placeholder="請輸入全名" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-lux-sub tracking-wider ml-1">電話 <span className="font-sans font-normal opacity-50">Phone</span></label>
+                            <input className="w-full input-soft px-4 py-3 text-sm" placeholder="09xxxxxxxx" />
+                        </div>
+                    </div>
+                </section>
+
+                {/* 寵物資料 */}
+                <section className="space-y-3">
+                    <div className="flex items-center gap-2 pl-2">
+                        <Icon name="dog" size={16} className="text-lux-gold"/>
+                        <h3 className="font-serif font-bold text-lux-navy text-lg">毛孩資料</h3>
+                    </div>
+                    <div className="card-paw p-6 space-y-5 bg-white/90">
+                        <div className="bg-[#FDFBF7] border border-[#F2EBE0] p-4 rounded-2xl flex gap-3">
+                            <div className="bg-lux-navy text-lux-gold rounded-full p-1.5 h-fit"><Icon name="sparkles" size={12}/></div>
+                            <div className="text-xs text-lux-navy leading-relaxed font-serif">
+                                <strong className="block mb-1 text-lux-gold">Hyponic 頂級洗劑</strong>
+                                本店全程使用德國皮膚科認證低敏洗劑，給寶貝最溫柔的潔淨體驗。
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-lux-sub tracking-wider ml-1">寵物名</label>
+                                <input className="w-full input-soft px-4 py-3 text-sm" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-lux-sub tracking-wider ml-1">品種</label>
+                                <input className="w-full input-soft px-4 py-3 text-sm" />
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* 簽名區 */}
+                <section className="space-y-3">
+                    <div className="flex items-center gap-2 pl-2">
+                        <Icon name="pen-tool" size={16} className="text-lux-gold"/>
+                        <h3 className="font-serif font-bold text-lux-navy text-lg">契約簽署</h3>
+                    </div>
+                    <div className="card-paw p-6 space-y-5 bg-white/90">
+                        <label className="flex gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100">
+                            <input type="checkbox" className="mt-0.5 accent-lux-navy w-5 h-5" />
+                            <div className="text-sm text-lux-text font-serif leading-relaxed">
+                                我已詳閱並同意 <span className="decoration-lux-gold decoration-2 underline-offset-4 border-b border-lux-gold font-bold">服務條款</span> 與 <span className="decoration-lux-gold decoration-2 underline-offset-4 border-b border-lux-gold font-bold">風險告知書</span>。
+                            </div>
+                        </label>
+
+                        {sig ? (
+                            <div className="h-32 bg-white rounded-2xl border-2 border-lux-gold/20 flex items-center justify-center relative overflow-hidden">
+                                <img src={sig} className="h-24 mix-blend-multiply" />
+                                <button onClick={()=>setSig(null)} className="absolute top-2 right-2 text-red-400 p-2 hover:bg-red-50 rounded-full"><Icon name="trash-2" size={16}/></button>
+                            </div>
+                        ) : (
+                            <button onClick={()=>setShowSig(true)} className="w-full h-32 bg-[#F9F7F4] border-2 border-dashed border-lux-sub/30 rounded-2xl flex flex-col items-center justify-center gap-2 text-lux-sub hover:border-lux-navy hover:text-lux-navy transition-all">
+                                <Icon name="pen-line" size={24} />
+                                <span className="text-xs font-bold font-serif">點擊簽名</span>
+                            </button>
+                        )}
+                    </div>
+                </section>
+
+                <div className="h-4"></div>
+
+                <button onClick={()=>alert('提交成功')} className="w-full py-4 btn-royal text-base font-bold tracking-widest shadow-lg flex items-center justify-center gap-2">
+                    確認送出 <Icon name="send" size={16}/>
+                </button>
+
+            </div>
+
+            {/* 簽名 Modal */}
+            {showSig && (
+                <div className="fixed inset-0 z-[100] bg-lux-navy/30 backdrop-blur-sm flex flex-col justify-end sm:justify-center fade-in">
+                    <div className="bg-white w-full sm:max-w-md sm:mx-auto h-[75vh] sm:h-auto sm:rounded-[32px] rounded-t-[32px] p-6 flex flex-col shadow-2xl">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-serif font-bold text-xl text-lux-navy">電子簽名</h3>
+                            <button onClick={()=>setShowSig(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200"><Icon name="x" size={20}/></button>
+                        </div>
+                        <div className="flex-1 bg-[#F9F7F4] rounded-2xl border border-gray-200 relative overflow-hidden cursor-crosshair">
+                            {/* 簽名板背景：淡淡的網格 */}
+                            <div className="absolute inset-0 opacity-10" style={{backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px'}}></div>
+                            <canvas ref={sigRef} className="absolute inset-0 w-full h-full" />
+                        </div>
+                        <div className="flex gap-3 mt-4">
+                            <button onClick={()=>padRef.current.clear()} className="flex-1 py-3.5 rounded-xl font-bold text-lux-sub bg-white border border-gray-200 hover:bg-gray-50">清除</button>
+                            <button onClick={()=>{setSig(padRef.current.toDataURL()); setShowSig(false)}} className="flex-[2] py-3.5 rounded-xl font-bold text-white bg-lux-navy shadow-lg">確認簽署</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    )
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
