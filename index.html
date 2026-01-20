@@ -13,172 +13,277 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --medical-blue: #005694;
-            --clean-cyan: #0ea5e9;
+            /* 品牌主色：深礦藍 (取自 Logo) */
+            --brand-navy: #1B2A41; 
+            /* 極光漸層色：深藍 -> 寶石青 */
+            --aurora-gradient: linear-gradient(135deg, #1B2A41 0%, #2D5F7C 100%);
+            /* 錯誤紅 */
+            --error-red: #ef4444;
         }
 
         body {
             font-family: 'Noto Sans TC', sans-serif;
-            background-color: #f0f9ff;
-            color: #334155;
+            background-color: #F8FAFC; /* 極淨灰白 */
+            color: var(--brand-navy);
             -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: contain;
         }
         
         .font-eng { font-family: 'Montserrat', sans-serif; }
 
-        /* 背景極光 */
-        .spa-background {
+        /* --- 背景光暈 --- */
+        .ambient-light {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100vh;
             z-index: 0;
             pointer-events: none;
             overflow: hidden;
-            background-image: 
-                radial-gradient(circle at 10% 10%, rgba(14, 165, 233, 0.05) 0%, transparent 40%),
-                radial-gradient(circle at 90% 90%, rgba(0, 86, 148, 0.05) 0%, transparent 40%);
         }
 
-        .bubble {
+        .orb {
             position: absolute;
             border-radius: 50%;
-            filter: blur(60px);
-            opacity: 0.6;
+            filter: blur(80px);
+            opacity: 0.08; /* 非常通透，像影子 */
             animation: float 15s infinite ease-in-out alternate;
         }
-        
-        .bubble-1 { width: 600px; height: 600px; background: rgba(14, 165, 233, 0.1); top: -20%; right: -20%; }
-        .bubble-2 { width: 500px; height: 500px; background: rgba(6, 182, 212, 0.08); bottom: -10%; left: -10%; animation-delay: -5s; }
+        .orb-1 { width: 600px; height: 600px; background: #1B2A41; top: -30%; right: -20%; }
+        .orb-2 { width: 500px; height: 500px; background: #4A90E2; bottom: -20%; left: -20%; animation-delay: -5s; }
 
         @keyframes float {
             0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(30px, -40px) scale(1.1); }
+            100% { transform: translate(30px, -20px) scale(1.05); }
         }
 
-        /* 水晶容器 */
-        .glass-container {
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 100%);
-            backdrop-filter: blur(25px); 
+        /* --- 水晶容器 (主框架) --- */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(25px);
             -webkit-backdrop-filter: blur(25px);
-            border-top: 1.5px solid rgba(255, 255, 255, 0.95);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-            border-left: 1px solid rgba(255, 255, 255, 0.5);
-            border-right: 1px solid rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.9);
             border-radius: 2.5rem;
-            box-shadow: 
-                0 20px 50px -10px rgba(14, 165, 233, 0.15),
-                inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 50px -15px rgba(27, 42, 65, 0.1);
         }
-        
-        /* 服務卡片 (帶極光漸層) */
-        .service-card {
+
+        /* --- Lion 輸入框 --- */
+        .lion-input {
+            background: #fff;
+            border: 1px solid #E2E8F0;
+            border-radius: 0.75rem;
+            transition: all 0.3s;
+            width: 100%;
+            padding: 12px 16px;
+            font-weight: 500;
+            color: var(--brand-navy);
+        }
+        .lion-input:focus {
+            border-color: #2D5F7C;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(45, 95, 124, 0.1);
+        }
+        .lion-input.input-error {
+            border-color: var(--error-red);
+            background-color: #fef2f2;
+        }
+
+        /* --- 選項按鈕 (Pill) --- */
+        .lion-option {
+            border: 1px solid #E2E8F0;
+            background: white;
+            color: #64748b;
+            padding: 12px;
+            border-radius: 0.75rem;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .lion-option.selected {
+            background: var(--brand-navy);
+            color: white;
+            border-color: var(--brand-navy);
+            box-shadow: 0 4px 12px rgba(27, 42, 65, 0.2);
+        }
+
+        /* --- 服務按鈕 --- */
+        .service-btn {
             position: relative;
             overflow: hidden;
             border-radius: 1.5rem;
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 10px 30px -10px rgba(14, 165, 233, 0.15), 0 4px 6px -2px rgba(14, 165, 233, 0.05);
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 4px 6px -1px rgba(27, 42, 65, 0.03);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px;
         }
-        
-        /* 內部極光背景 */
-        .service-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(224, 242, 254, 0.3) 50%, rgba(255,255,255,0.1) 100%);
-            z-index: 0;
+        .service-btn:active { transform: scale(0.98); }
+        .service-btn:hover {
+            border-color: #2D5F7C;
+            background: #fff;
+            box-shadow: 0 10px 30px -5px rgba(45, 95, 124, 0.15);
         }
+        .icon-box {
+            width: 54px; height: 54px;
+            border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--aurora-gradient);
+            color: white;
+            box-shadow: 0 4px 12px rgba(27, 42, 65, 0.15);
+            transition: transform 0.3s ease;
+        }
+        .service-btn:hover .icon-box { transform: scale(1.05); }
 
-        /* 裝飾光暈 */
-        .card-decoration {
-            position: absolute;
-            top: -20px;
-            right: -20px;
-            width: 100px;
-            height: 100px;
-            background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, transparent 70%);
-            border-radius: 50%;
-            filter: blur(20px);
-            z-index: 0;
-        }
-
-        .service-card:active { transform: scale(0.98); }
-        .service-card:hover { 
-            border-color: #0ea5e9; 
-            box-shadow: 0 15px 40px -10px rgba(14, 165, 233, 0.25);
-        }
-
-        .logo-container {
+        /* --- 統一聯絡按鈕 (Unified Contact Button) --- */
+        .unified-btn {
             width: 100%;
-            padding-bottom: 0.2rem;
-            position: relative;
-            z-index: 10;
-        }
-        .logo-container img {
-            width: 100%;
-            max-width: 280px;
-            margin: 0 auto;
-            display: block;
-            filter: drop-shadow(0 15px 25px rgba(14, 165, 233, 0.2));
-        }
-
-        .contact-pill {
-            background: rgba(255, 255, 255, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.9);
-            border-radius: 99px;
-            padding: 10px 24px;
-            font-size: 13px;
+            padding: 16px;
+            border-radius: 1.2rem;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid #E2E8F0;
+            color: var(--brand-navy);
             font-weight: 700;
+            font-size: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            transition: all 0.2s;
-            box-shadow: 0 4px 10px rgba(14, 165, 233, 0.05);
-            backdrop-filter: blur(4px);
-        }
-        .contact-pill:hover {
-            background: #fff;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(14, 165, 233, 0.15);
-            color: var(--medical-blue);
+            gap: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
 
+        .unified-btn:hover {
+            background: #fff;
+            border-color: var(--brand-navy);
+            box-shadow: 0 8px 20px -5px rgba(27, 42, 65, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .unified-btn:active { transform: scale(0.98); }
+
+        /* --- 通用輔助 --- */
+        .logo-img { width: 100%; max-width: 240px; margin: 0 auto; display: block; filter: contrast(1.05); }
+        .one-line-clamp { white-space: nowrap; display: block; transform-origin: center center; transform: scale(0.9); width: 110%; margin-left: -5%; text-align: center; }
+        .field-error { color: var(--error-red); font-size: 12px; margin-top: 4px; display: flex; align-items: center; gap: 4px; font-weight: bold; }
+        .fullscreen-signature { position: fixed; inset: 0; z-index: 100; background: #F8FAFC; display: flex; flex-direction: column; }
+        
+        /* 震動動畫 */
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+        .shake-error { animation: shake 0.4s ease-in-out; }
+        
+        /* Modal 動畫 */
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .modal-enter { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     </style>
 </head>
-<body class="relative min-h-screen flex justify-center py-6 px-4">
+<body class="relative min-h-screen flex justify-center py-4 px-4 md:py-8">
     
-    <div class="spa-background">
-        <div class="bubble bubble-1"></div>
-        <div class="bubble bubble-2"></div>
+    <div class="ambient-light">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
     </div>
 
-    <div id="root" class="relative z-10 w-full max-w-lg glass-container overflow-hidden min-h-[85vh] flex flex-col"></div>
+    <div id="root" class="relative z-10 w-full max-w-lg glass-panel overflow-hidden min-h-[85vh] flex flex-col"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, useMemo } = React;
         const supabase = window.supabase.createClient('https://fpkzuotxxbsqisgwupix.supabase.co', 'sb_publishable_VsAJfSi7Fb3zu_A5Ksm2wA_mAUkDLBs'); 
 
+        // Icon Component
         const Icon = ({ name, size = 20, className = "" }) => {
             const iconRef = useRef(null);
             useEffect(() => {
                 if (typeof window.lucide !== 'undefined' && iconRef.current) {
-                    window.lucide.createIcons({
-                        root: iconRef.current, attrs: { "stroke-width": 2, class: className }, name: name, nameAttr: 'data-lucide'
-                    });
+                    window.lucide.createIcons({ root: iconRef.current, attrs: { "stroke-width": 2, class: className }, name: name, nameAttr: 'data-lucide' });
                 }
             }, [name, className]);
             return <span ref={iconRef} className="inline-flex items-center justify-center"><i data-lucide={name} style={{ width: size, height: size }}></i></span>;
         };
 
+        // Input Component
+        const InputWithError = ({ name, type = 'text', value, onChange, placeholder, error, className = '', ...props }) => (
+            <div className="space-y-1">
+                <input name={name} type={type} value={value} onChange={onChange} className={`lion-input ${error ? 'input-error shake-error' : ''} ${className}`} placeholder={placeholder} {...props} />
+                {error && <div className="field-error"><Icon name="alert-circle" size={12} />{error}</div>}
+            </div>
+        );
+
+        // Terms Modal (Lion Style)
+        const TermsModal = ({ isOpen, onClose, title, children, onAgree }) => {
+            const contentRef = useRef(null);
+            const [canAgree, setCanAgree] = useState(false);
+
+            useEffect(() => {
+                if (isOpen) {
+                    setCanAgree(false);
+                    document.body.style.overflow = 'hidden';
+                    setTimeout(() => {
+                        if (contentRef.current && contentRef.current.scrollHeight <= contentRef.current.clientHeight + 1) setCanAgree(true);
+                    }, 500);
+                } else { document.body.style.overflow = ''; }
+            }, [isOpen]);
+
+            const handleScroll = (e) => {
+                const { scrollTop, scrollHeight, clientHeight } = e.target;
+                if (scrollHeight - scrollTop - clientHeight < 50) setCanAgree(true);
+            };
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-sm flex items-end justify-center">
+                    <div className="bg-white w-full md:max-w-lg h-[85vh] rounded-t-[2.5rem] flex flex-col shadow-2xl relative modal-enter">
+                        <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center">
+                            <h3 className="font-bold text-lg text-[#1B2A41]">{title}</h3>
+                            <button onClick={onClose} className="p-2 bg-slate-50 rounded-full hover:bg-slate-100"><Icon name="x" size={20}/></button>
+                        </div>
+                        <div ref={contentRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-6 space-y-4 text-sm text-slate-600 leading-relaxed">
+                            {children}
+                            <div className="h-10"></div>
+                        </div>
+                        <div className="p-6 border-t border-slate-100 bg-white pb-10">
+                            {!canAgree && <div className="text-center text-xs text-blue-400 mb-2 font-bold animate-pulse">👇 請滑動至底部以同意條款</div>}
+                            <button onClick={() => { if(canAgree) { onAgree(); onClose(); }}} disabled={!canAgree}
+                                className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${canAgree ? 'bg-[#1B2A41] text-white shadow-lg' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>
+                                <Icon name="check-circle" size={18}/> 本人已詳閱並同意
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const App = () => {
             const [view, setView] = useState('entry');
             const [isBoarding, setIsBoarding] = useState(false);
+            const [formData, setFormData] = useState({
+                owner_name: '', phone: '', pet_name: '', breed: '', weight: '', age: '', sex: '', fix: '',
+                checkin_date: '', checkout_date: '', service_type: '', legal_agree: false,
+                email: '', address: '', emergency_name: '', emergency_phone: '',
+                is_under_one: false, age_months: '', chip_status: '', chip_id: '',
+                grooming_temperament: '', dog_traits: [], medical_status: '', medical_history: [],
+                is_barking: '', stay_exp: '', food_aggr: '', pad_toilet: '', vaccine: '', deworm: '', crate_status: [],
+                boarding_notice_agree: false
+            });
+            const [errors, setErrors] = useState({});
+            const [showFullSig, setShowFullSig] = useState(false);
+            const [realtimeSig, setRealtimeSig] = useState(null);
+            const [activeModal, setActiveModal] = useState(null);
+            const [termsRead, setTermsRead] = useState({ boarding: false, grooming: false });
+            const sigPadRef = useRef(null);
+            const fullSigCanvasRef = useRef(null);
+
+            const allTermsRead = useMemo(() => {
+                if (!termsRead.grooming) return false;
+                if (isBoarding && !termsRead.boarding) return false;
+                return true;
+            }, [isBoarding, termsRead]);
 
             useEffect(() => {
                 const handleHashChange = () => {
@@ -193,100 +298,142 @@
                 return () => window.removeEventListener('hashchange', handleHashChange);
             }, []);
 
-            const navigateTo = (type) => { window.location.hash = type === 'boarding' ? '#boarding' : '#grooming'; };
+            const navigateTo = (type) => window.location.hash = type === 'boarding' ? '#boarding' : '#grooming';
 
+            // 簽名板邏輯
+            useEffect(() => {
+                if (showFullSig && fullSigCanvasRef.current) {
+                    const canvas = fullSigCanvasRef.current;
+                    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+                    canvas.width = canvas.offsetWidth * ratio;
+                    canvas.height = canvas.offsetHeight * ratio;
+                    const ctx = canvas.getContext("2d");
+                    ctx.scale(ratio, ratio);
+                    sigPadRef.current = new SignaturePad(canvas, { minWidth: 2, maxWidth: 4, penColor: '#1B2A41' });
+                }
+            }, [showFullSig]);
+
+            const handleChange = (field, val) => {
+                setFormData(prev => ({...prev, [field]: val}));
+                if(errors[field]) setErrors(prev => ({...prev, [field]: null}));
+            };
+
+            const toggleArrayField = (field, value) => {
+                setFormData(prev => {
+                    const currentArr = Array.isArray(prev[field]) ? prev[field] : [];
+                    let updatedArr = currentArr.includes(value) ? currentArr.filter(i => i !== value) : [...currentArr, value];
+                    return { ...prev, [field]: updatedArr };
+                });
+            };
+
+            const handleSubmit = async () => {
+                const newErrors = {};
+                // 簡易驗證示範 (完整邏輯請參照 index.html)
+                if (!formData.owner_name) newErrors.owner_name = "請輸入姓名";
+                if (!formData.phone) newErrors.phone = "請輸入電話";
+                if (!formData.pet_name) newErrors.pet_name = "請輸入寵物名字";
+                if (!allTermsRead) newErrors.legal_agree = "請先詳閱條款";
+                if (!realtimeSig) newErrors.signature = "請簽名";
+                
+                if (Object.keys(newErrors).length > 0) {
+                    setErrors(newErrors);
+                    alert("請檢查欄位是否填寫完整");
+                    return;
+                }
+                
+                alert("提交成功！(功能已整合，請連接後端)");
+            };
+
+            // --- Entry View (首頁) ---
             if (view === 'entry') {
                 return (
                     <div className="flex flex-col h-full">
-                        
-                        <div className="pt-10 pb-4 flex flex-col items-center relative">
-                            <div className="logo-container">
-                                <img src="logo.png" alt="LIONPETSSTORE" 
-                                    onError={(e) => e.target.src = 'https://placehold.co/544x320/transparent/005694?text=LION+png'} />
+                        <div className="pt-12 pb-4 flex flex-col items-center relative px-6">
+                            <div className="mb-4 w-full flex justify-center">
+                                <img src="logo.png" alt="LIONPETSSTORE" className="logo-img" 
+                                    onError={(e) => e.target.src = 'https://placehold.co/544x320/transparent/1B2A41?text=LION+LOGO'} />
                             </div>
                             
-                            <h1 className="font-eng text-xl font-black tracking-widest text-[#005694] mb-1">LIONPETSSTORE</h1>
-                            <p className="text-slate-500 text-[10px] font-bold tracking-widest uppercase">Premium Pet Salon & Hotel</p>
+                            <h1 className="font-eng text-xl font-black tracking-widest text-[#1B2A41] mb-1">LIONPETSSTORE</h1>
+                            <p className="text-slate-400 text-[10px] font-bold tracking-[0.2em] uppercase">Premium Pet Salon & Hotel</p>
                             
-                            {/* --- 資訊區塊回歸中間 (無卡片設計) --- */}
-                            <div className="mt-5 flex flex-col items-center gap-3">
-                                {/* 特寵字號膠囊 */}
-                                <span className="inline-block text-[10px] font-bold text-[#005694] border border-blue-200 bg-white/40 px-3 py-1 rounded-full tracking-wider shadow-sm backdrop-blur-sm">
+                            {/* 資訊區塊 (置於按鈕上方) */}
+                            <div className="mt-8 flex flex-col items-center gap-4 w-full">
+                                <span className="inline-block text-[10px] font-bold text-[#1B2A41] border border-[#1B2A41]/20 px-4 py-1.5 rounded-full tracking-wider bg-white/40">
                                     特寵業字第 C1130686 號
                                 </span>
 
-                                {/* Hyponic 認證 (文字+盾牌) - 移除白底，保留精緻感 */}
-                                <div className="space-y-1 text-center">
+                                <div className="text-center w-full space-y-1">
                                     <div className="flex items-center justify-center gap-2">
-                                        <Icon name="shield-check" size={18} className="text-[#005694]" />
-                                        <span className="text-xs font-bold text-[#005694]">嚴選 Hyponic 低敏洗劑</span>
-                                        <span className="text-[9px] bg-[#005694] text-white px-1.5 py-0.5 rounded shadow-sm tracking-wide">Excellent</span>
+                                        <Icon name="shield-check" size={16} className="text-[#1B2A41]" />
+                                        <span className="text-xs font-bold text-[#1B2A41]">嚴選 Hyponic 低敏洗劑</span>
+                                        <span className="text-[9px] text-white px-2 py-0.5 rounded shadow-sm tracking-wide font-medium" 
+                                              style={{ background: 'var(--aurora-gradient)' }}>
+                                            Excellent
+                                        </span>
                                     </div>
-                                    {/* 強制不換行處理 */}
-                                    <p className="text-[9px] text-slate-500 font-medium whitespace-nowrap scale-95 origin-center">
+                                    <p className="text-[9px] text-slate-500 font-medium one-line-clamp">
                                         使用韓國頂級品牌，榮獲 德國 Dermatest 皮膚科敏感性測試最高級別認證。
                                     </p>
                                 </div>
                             </div>
                         </div>
 
+                        {/* 服務按鈕 */}
                         <main className="px-6 pb-8 w-full space-y-6 flex-grow relative flex flex-col justify-center">
-                            
                             <div className="grid gap-4 mt-2">
-                                {/* 美容按鈕 */}
-                                <button onClick={() => navigateTo('grooming')} className="service-card p-5 flex items-center justify-between group cursor-pointer">
-                                    <div className="card-decoration"></div>
-                                    <div className="flex items-center gap-5 relative z-10">
-                                        <div className="w-14 h-14 bg-gradient-to-br from-blue-50 to-blue-100 text-[#005694] rounded-2xl flex items-center justify-center shadow-inner border border-white/50">
-                                            <Icon name="scissors" size={26}/>
+                                <button onClick={() => navigateTo('grooming')} className="service-btn group cursor-pointer">
+                                    <div className="flex items-center gap-5">
+                                        <div className="icon-box">
+                                            <Icon name="scissors" size={24}/>
                                         </div>
                                         <div className="text-left">
-                                            <h3 className="font-bold text-lg text-slate-800">沙龍美容</h3>
-                                            <p className="text-xs text-[#0ea5e9] mt-0.5 font-eng font-bold tracking-widest">GROOMING</p>
+                                            <h3 className="font-bold text-lg text-[#1B2A41]">沙龍美容</h3>
+                                            <p className="text-xs text-slate-400 mt-0.5 font-eng font-bold tracking-widest group-hover:text-[#2D5F7C] transition-colors">GROOMING</p>
                                         </div>
                                     </div>
-                                    <div className="text-slate-400 relative z-10 bg-white/60 p-1.5 rounded-full group-hover:bg-white transition-colors shadow-sm">
+                                    <div className="text-slate-300 group-hover:text-[#1B2A41] transition-colors">
                                         <Icon name="chevron-right" size={20}/>
                                     </div>
                                 </button>
 
-                                {/* 住宿按鈕 */}
-                                <button onClick={() => navigateTo('boarding')} className="service-card p-5 flex items-center justify-between group cursor-pointer">
-                                    <div className="card-decoration"></div>
-                                    <div className="flex items-center gap-5 relative z-10">
-                                        <div className="w-14 h-14 bg-gradient-to-br from-slate-50 to-slate-100 text-slate-600 rounded-2xl flex items-center justify-center shadow-inner border border-white/50">
-                                            <Icon name="home" size={26}/>
+                                <button onClick={() => navigateTo('boarding')} className="service-btn group cursor-pointer">
+                                    <div className="flex items-center gap-5">
+                                        <div className="icon-box">
+                                            <Icon name="home" size={24}/>
                                         </div>
                                         <div className="text-left">
-                                            <h3 className="font-bold text-lg text-slate-800">精品住宿</h3>
-                                            <p className="text-xs text-slate-500 mt-0.5 font-eng font-bold tracking-widest">BOARDING</p>
+                                            <h3 className="font-bold text-lg text-[#1B2A41]">精品住宿</h3>
+                                            <p className="text-xs text-slate-400 mt-0.5 font-eng font-bold tracking-widest group-hover:text-[#2D5F7C] transition-colors">BOARDING</p>
                                         </div>
                                     </div>
-                                    <div className="text-slate-400 relative z-10 bg-white/60 p-1.5 rounded-full group-hover:bg-white transition-colors shadow-sm">
+                                    <div className="text-slate-300 group-hover:text-[#1B2A41] transition-colors">
                                         <Icon name="chevron-right" size={20}/>
                                     </div>
                                 </button>
                             </div>
 
-                            <div className="pt-2 space-y-5">
-                                <a href="https://line.me/R/ti/p/lin.ee/jS3JP5z" className="w-full bg-[#06C755] text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow-xl shadow-green-200/80 hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer">
-                                    <Icon name="message-circle" size={24}/> 
-                                    <span>LINE 官方帳號預約</span>
+                            {/* 聯絡區塊 (Unified Style) */}
+                            <div className="pt-2 grid gap-3">
+                                <a href="https://line.me/R/ti/p/lin.ee/jS3JP5z" className="unified-btn group">
+                                    <Icon name="message-circle" size={20} className="text-[#06C755] group-hover:scale-110 transition-transform"/> 
+                                    <span>LINE 官方帳號</span>
                                 </a>
                                 
-                                <div className="flex justify-center gap-4">
-                                    <a href="tel:033608693" className="contact-pill text-slate-600 hover:text-[#005694]">
-                                        <Icon name="phone" size={16}/> 撥打電話
+                                <div className="grid grid-cols-2 gap-3">
+                                    <a href="tel:033608693" className="unified-btn group">
+                                        <Icon name="phone" size={18} className="text-[#1B2A41] group-hover:scale-110 transition-transform"/> 
+                                        <span>撥打電話</span>
                                     </a>
-                                    <a href="https://www.facebook.com/lionbeautycasa/?locale=zh_TW" target="_blank" className="contact-pill text-slate-600 hover:text-[#1877F2]">
-                                        <Icon name="facebook" size={16}/> 粉絲專頁
+                                    <a href="https://www.facebook.com/lionbeautycasa/?locale=zh_TW" target="_blank" className="unified-btn group">
+                                        <Icon name="facebook" size={18} className="text-[#1877F2] group-hover:scale-110 transition-transform"/> 
+                                        <span>粉絲專頁</span>
                                     </a>
                                 </div>
                             </div>
-
                         </main>
                         
-                        <footer className="text-center py-4 border-t border-white/40">
+                        <footer className="text-center py-4 border-t border-slate-200/50">
                             <p className="text-[10px] text-slate-400 font-eng">桃園市桃園區民族路199-2號</p>
                             <p className="text-[9px] text-slate-300 mt-1 font-eng">© LIONPETSSTORE 2024</p>
                         </footer>
@@ -294,7 +441,95 @@
                 );
             }
 
-            return <div className="min-h-screen flex items-center justify-center text-gray-400">載入中...</div>;
+            // --- Client View (表單) ---
+            return (
+                <div className="min-h-screen pb-20">
+                    <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
+                         <div className="flex items-center gap-3">
+                            <button onClick={()=>window.history.back()} className="p-2 -ml-2 rounded-full hover:bg-slate-100 text-[#1B2A41]">
+                                <Icon name="arrow-left" size={20}/>
+                            </button>
+                            <span className="font-bold text-[#1B2A41] font-serif tracking-wide">{isBoarding ? '安親住宿契約' : '美容服務契約'}</span>
+                         </div>
+                         <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 bg-white p-0.5">
+                            <img src="logo.png" className="w-full h-full object-contain" />
+                         </div>
+                    </nav>
+
+                    <main className="px-5 py-6 max-w-xl mx-auto space-y-6">
+                        
+                        {/* LINE Section (修正：與首頁統一風格) */}
+                        <section className="space-y-3 mb-6">
+                            <a href="https://line.me/R/ti/p/lin.ee/jS3JP5z" className="unified-btn group">
+                                <Icon name="message-circle" size={20} className="text-[#06C755] group-hover:scale-110 transition-transform"/> 
+                                <span>LINE 官方帳號</span>
+                            </a>
+                        </section>
+
+                        <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+                            <h3 className="font-bold text-[#1B2A41] flex items-center gap-2 border-b border-slate-100 pb-3"><Icon name="user" className="text-[#2D5F7C]"/> 家長資料</h3>
+                            <InputWithError name="owner_name" placeholder="家長姓名" value={formData.owner_name} onChange={e=>handleChange('owner_name', e.target.value)} error={errors.owner_name} />
+                            <InputWithError name="phone" placeholder="聯絡電話" value={formData.phone} onChange={e=>handleChange('phone', e.target.value)} error={errors.phone} type="tel" />
+                        </section>
+
+                        <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+                            <h3 className="font-bold text-[#1B2A41] flex items-center gap-2 border-b border-slate-100 pb-3"><Icon name="dog" className="text-[#2D5F7C]"/> 寶貝資料</h3>
+                            <InputWithError name="pet_name" placeholder="寵物名字" value={formData.pet_name} onChange={e=>handleChange('pet_name', e.target.value)} error={errors.pet_name} />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className={`lion-option ${formData.sex==='公'?'selected':''}`} onClick={()=>setFormData({...formData, sex:'公'})}>公</div>
+                                <div className={`lion-option ${formData.sex==='母'?'selected':''}`} onClick={()=>setFormData({...formData, sex:'母'})}>母</div>
+                            </div>
+                        </section>
+
+                        {/* 條款與簽名 */}
+                        <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+                            <h3 className="font-bold text-[#1B2A41] flex items-center gap-2 border-b border-slate-100 pb-3"><Icon name="file-text" className="text-[#2D5F7C]"/> 條款簽署</h3>
+                            
+                            <button onClick={()=>setActiveModal('grooming')} className={`w-full py-4 border rounded-xl font-bold flex items-center justify-between px-4 transition-all ${formData.legal_agree ? 'border-green-500 text-green-600 bg-green-50' : 'border-slate-200 text-slate-400 hover:bg-slate-50'}`}>
+                                <span>{formData.legal_agree ? '已詳閱服務條款' : '詳閱服務條款'}</span>
+                                <Icon name={formData.legal_agree ? "check" : "chevron-right"} size={18}/>
+                            </button>
+
+                            <button onClick={()=>setShowFullSig(true)} className={`w-full py-10 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 transition-all ${realtimeSig ? 'border-green-500 bg-green-50' : 'border-slate-200 text-slate-400 hover:bg-slate-50'}`}>
+                                {realtimeSig ? <img src={realtimeSig} className="h-16 object-contain"/> : <><Icon name="pen-tool"/> <span>點擊簽名</span></>}
+                            </button>
+                        </section>
+
+                        <div className="pt-4 pb-10">
+                            <button onClick={handleSubmit} className="w-full py-4 bg-[#1B2A41] text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 hover:bg-[#2D5F7C] transition-all">
+                                <Icon name="send" size={18}/> 提交契約
+                            </button>
+                        </div>
+                    </main>
+
+                    {showFullSig && (
+                        <div className="fullscreen-signature">
+                            <div className="p-4 flex justify-between items-center bg-[#1B2A41] text-white">
+                                <span>請簽名</span>
+                                <button onClick={()=>setShowFullSig(false)}><Icon name="x"/></button>
+                            </div>
+                            <div className="flex-1 p-4 relative bg-slate-100">
+                                <canvas ref={fullSigCanvasRef} className="w-full h-full bg-white rounded-2xl border border-slate-300 shadow-inner"></canvas>
+                            </div>
+                            <div className="p-4 bg-white flex gap-3">
+                                <button onClick={()=>{sigPadRef.current.clear()}} className="flex-1 py-3 bg-slate-100 rounded-xl font-bold text-slate-600">重簽</button>
+                                <button onClick={()=>{
+                                    if(!sigPadRef.current.isEmpty()) {
+                                        setRealtimeSig(sigPadRef.current.toDataURL());
+                                        setShowFullSig(false);
+                                    }
+                                }} className="flex-[2] py-3 bg-[#1B2A41] text-white rounded-xl font-bold">確認</button>
+                            </div>
+                        </div>
+                    )}
+
+                    <TermsModal isOpen={!!activeModal} onClose={()=>setActiveModal(null)} title="服務條款" onAgree={()=>setFormData({...formData, legal_agree: true})} >
+                        <p>1. 本店服務公約...</p>
+                        <p>2. 安全免責聲明...</p>
+                        <p>(此處請填入完整條款內容)</p>
+                    </TermsModal>
+                </div>
+            );
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
