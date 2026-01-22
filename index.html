@@ -749,7 +749,7 @@ const validate = () => {
                         {/* 付款資訊 */}
                         <section className="glass-premium p-6 md:p-8 space-y-6">
                             <h3 className="font-bold text-lion-navy border-b border-slate-200 pb-4 flex items-center gap-3 text-lg"><div className="w-8 h-8 rounded-lg bg-lion-navy/10 flex items-center justify-center text-lion-navy"><Icon name="dollar-sign" size={18}/></div> 付款與金額確認</h3>
-                            <InputWithError label="本次消費總金額" type="number" name="total_amount" value={formData.total_amount} onChange={e=>handleChange('total_amount', e.target.value)} placeholder="由店家填寫" />
+                            <InputWithError label="本次消費總金額" type="number" name="total_amount" value={formData.total_amount} onChange={e=>handleChange('total_amount', e.target.value)} placeholder="由店家告知金額後填寫" />
                             <div className="space-y-2"><label className="text-xs font-bold text-lion-navy/70 ml-1">付款方式</label><div className="flex gap-3">{['現金','轉帳'].map(opt=><button key={opt} onClick={()=>handleChange('payment_method',opt)} className={`flex-1 py-3.5 rounded-xl border-2 text-sm font-bold transition-all ${formData.payment_method===opt?'bg-lion-navy text-white border-lion-navy shadow-md':'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}`}>{opt}</button>)}</div></div>
                             {view === 'boarding' && (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-slide-down">
