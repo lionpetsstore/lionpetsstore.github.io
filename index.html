@@ -250,12 +250,16 @@
             const [view, setView] = useState('home');
             const [toast, setToast] = useState(null);
             
-            // 表單資料
+            // 狀態管理
             const [formData, setFormData] = useState({
                 // 通用
                 email: '', owner_name: '', phone: '', owner_id: '', address: '', 
                 emergency_name: '', emergency_phone: '',
                 pet_name: '', breed: '', sex: '', age_type: 'adult', age: '', age_months: '', weight: '', fix: '',
+                
+                // 核心更新：加入寵物類型與房型
+                pet_type: 'dog', room_type: '', room_price: '',
+                
                 chip_status: '', chip_id: '', preferred_clinic: '',
                 legal_agree: false, signature: null,
                 // 美容專用
@@ -270,6 +274,22 @@
                 // 高齡風險同意
                 high_risk_agree: false
             });            
+            
+            // 房型價格表 (已加入)
+            const roomRates = {
+                cat: [
+                    { name: '經典房', price: 600, desc: '舒適獨立空間' },
+                    { name: '景觀房', price: 800, desc: '大面窗景眺望' },
+                    { name: '家庭房', price: 1200, desc: '多貓寬敞首選' }
+                ],
+                dog: [
+                    { name: '標準房', price: 500, desc: '小型犬適用' },
+                    { name: '經典房', price: 600, desc: '中型犬適用' },
+                    { name: '豪華房', price: 800, desc: '大型犬適用' },
+                    { name: 'VIP房', price: 1300, desc: '特大獨立空間' }
+                ]
+            };
+
             const [errors, setErrors] = useState({});
             const [isSubmitting, setIsSubmitting] = useState(false);
             const [showSuccess, setShowSuccess] = useState(false);
@@ -344,6 +364,9 @@
                 } else if (view === 'boarding') {
                     if (!formData.checkin_date) newErrors.checkin_date = true;
                     if (!formData.checkout_date) newErrors.checkout_date = true;
+                    // 檢查房型
+                    if (!formData.room_type) { showToastMsg('請選擇住宿房型'); return false; }
+
                     if (!formData.cage_training) newErrors.cage_training = true;
                     if (!formData.is_barking) newErrors.is_barking = true;
                     if (!formData.has_boarding_exp) newErrors.has_boarding_exp = true;
@@ -378,24 +401,19 @@
                 setShowSuccess(true);
             };
 
-// 新增：用來記錄畫布尺寸的 Ref
+            // 新增：用來記錄畫布尺寸的 Ref
             const canvasSizeRef = useRef({ width: 0, height: 0 });
 
-            // 修正簽名板邏輯 (解決手機無法簽名問題)
             useEffect(() => {
                 let timer;
-                
-                // 防止手機在簽名時滾動畫面
                 const preventTouchMove = (e) => {
                     if (showFullSig) e.preventDefault();
                 };
 
-                // 初始化畫布 (關鍵修復：處理高解析度螢幕)
                 const initCanvas = () => {
                     const canvas = fullSigCanvasRef.current;
                     if (!canvas) return;
                     
-                    // 取得父容器的大小
                     const container = canvas.parentElement;
                     const rect = container.getBoundingClientRect();
                     const displayWidth = rect.width;
@@ -403,53 +421,37 @@
                     
                     canvasSizeRef.current = { width: displayWidth, height: displayHeight };
                     
-                    // 處理視網膜螢幕 (Retina Display) 縮放比例
                     const ratio = Math.max(window.devicePixelRatio || 1, 1);
                     canvas.width = displayWidth * ratio;
                     canvas.height = displayHeight * ratio;
-                    
-                    // 設定顯示大小
                     canvas.style.width = displayWidth + 'px';
                     canvas.style.height = displayHeight + 'px';
                     
                     const ctx = canvas.getContext("2d");
                     ctx.scale(ratio, ratio);
-                    
-                    // 確保背景是白色 (避免存檔變黑色背景)
                     ctx.fillStyle = "rgb(255, 255, 255)";
                     ctx.fillRect(0, 0, displayWidth, displayHeight);
                     
-                    // 重置並初始化 SignaturePad
                     if (padInstance.current) {
                         padInstance.current.off();
                     }
-                    
-                    // 筆觸設定
                     padInstance.current = new SignaturePad(canvas, { 
-                        penColor: "rgb(27, 54, 93)", // 改用萊恩的深藍色筆跡
+                        penColor: "rgb(27, 54, 93)", 
                         backgroundColor: "rgb(255, 255, 255)", 
                         minWidth: 1.5,
                         maxWidth: 4.0,
-                        throttle: 16, 
-                        minDistance: 3, 
-                        velocityFilterWeight: 0.7,
                     });
                 };
 
                 if (showFullSig) {
-                    // 鎖定背景捲動
                     document.body.style.overflow = 'hidden';
                     document.addEventListener('touchmove', preventTouchMove, { passive: false });
-                    
-                    // 延遲一點點初始化，確保彈窗動畫結束，寬度正確
                     timer = setTimeout(initCanvas, 150);
                 }
                 
                 return () => { 
                     if (timer) clearTimeout(timer);
                     if (padInstance.current) padInstance.current.off(); 
-                    
-                    // 解除鎖定
                     document.body.style.overflow = '';
                     document.removeEventListener('touchmove', preventTouchMove);
                 };
@@ -464,11 +466,10 @@
                 }
             };
 
-// --- Home View (Classic) ---
+            // --- Home View ---
             if (view === 'home') {
                 return (
                     <div className="min-h-screen relative flex flex-col font-sans">
-                        {/* 移除佔空間的空 nav，直接設定 main 的頂部間距 */}
                         <main className="flex-1 px-6 pb-10 max-w-lg mx-auto w-full pt-12 md:pt-20">
                             <div className="text-center mb-10 animate-fade-in relative z-10">
                                 <img src="logo.png" className="w-72 md:w-96 h-auto mx-auto object-contain drop-shadow-lg mb-6 hover:scale-105 transition-transform duration-500" />
@@ -581,11 +582,51 @@
 
                         <section className="glass-premium p-6 md:p-8 space-y-6">
                             <h3 className="font-bold text-lion-navy border-b border-slate-200 pb-3 flex items-center gap-2 text-lg"><Icon name="paw-print" size={20}/> 寵物詳細資料</h3>
+                            
+                            {/* 1. 寵物類型切換 (Lion 風格) */}
+                            <div className="flex p-1 bg-slate-100 rounded-xl mb-4">
+                                <button 
+                                    onClick={() => { handleChange('pet_type', 'dog'); handleChange('room_type', ''); handleChange('room_price', ''); }}
+                                    className={`flex-1 py-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${formData.pet_type === 'dog' ? 'bg-lion-navy text-white shadow-md' : 'text-slate-400 hover:text-lion-navy'}`}
+                                >
+                                    <Icon name="dog" size={18}/> 狗狗
+                                </button>
+                                <button 
+                                    onClick={() => { handleChange('pet_type', 'cat'); handleChange('room_type', ''); handleChange('room_price', ''); }}
+                                    className={`flex-1 py-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${formData.pet_type === 'cat' ? 'bg-lion-navy text-white shadow-md' : 'text-slate-400 hover:text-lion-navy'}`}
+                                >
+                                    <Icon name="cat" size={18}/> 貓咪
+                                </button>
+                            </div>
+
                             {view === 'boarding' && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-lion-gold/10 p-5 rounded-2xl border border-lion-gold/20 mb-6">
-                                    <div className="space-y-1"><label className="text-xs font-bold text-lion-navy">入住日期 *</label><input type="date" className="w-full cute-input rounded-xl px-4 py-3 text-sm" value={formData.checkin_date} onChange={e=>handleChange('checkin_date', e.target.value)} /></div>
-                                    <div className="space-y-1"><label className="text-xs font-bold text-lion-navy">退房日期 *</label><input type="date" className="w-full cute-input rounded-xl px-4 py-3 text-sm" value={formData.checkout_date} onChange={e=>handleChange('checkout_date', e.target.value)} /></div>
-                                </div>
+                                <>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-lion-gold/10 p-5 rounded-2xl border border-lion-gold/20 mb-6">
+                                        <div className="space-y-1"><label className="text-xs font-bold text-lion-navy">入住日期 *</label><input type="date" className="w-full cute-input rounded-xl px-4 py-3 text-sm" value={formData.checkin_date} onChange={e=>handleChange('checkin_date', e.target.value)} /></div>
+                                        <div className="space-y-1"><label className="text-xs font-bold text-lion-navy">退房日期 *</label><input type="date" className="w-full cute-input rounded-xl px-4 py-3 text-sm" value={formData.checkout_date} onChange={e=>handleChange('checkout_date', e.target.value)} /></div>
+                                    </div>
+
+                                    {/* 2. 房型選擇 (自動連動) */}
+                                    <div className="space-y-3 mb-8">
+                                        <label className="text-xs font-bold text-slate-500 ml-1">選擇房型 ({formData.pet_type === 'dog' ? '狗狗' : '貓咪'}) *</label>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {roomRates[formData.pet_type].map((room) => (
+                                                <div 
+                                                    key={room.name}
+                                                    onClick={() => { handleChange('room_type', room.name); handleChange('room_price', room.price); }}
+                                                    className={`cursor-pointer rounded-xl p-4 border-2 transition-all relative overflow-hidden group ${formData.room_type === room.name ? 'border-lion-navy bg-white shadow-md' : 'border-slate-200 bg-white/50 hover:border-lion-gold'}`}
+                                                >
+                                                    <div className="flex justify-between items-start mb-1">
+                                                        <span className={`font-bold text-sm ${formData.room_type === room.name ? 'text-lion-navy' : 'text-slate-600'}`}>{room.name}</span>
+                                                        {formData.room_type === room.name && <Icon name="check-circle" size={16} className="text-lion-gold"/>}
+                                                    </div>
+                                                    <div className="text-lg font-serif font-bold text-lion-navy">${room.price}<span className="text-xs font-sans font-normal text-slate-400">/晚</span></div>
+                                                    <div className="text-[10px] text-slate-400 mt-1 font-medium">{room.desc}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </>
                             )}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <InputWithError label="寵物名字 *" name="pet_name" value={formData.pet_name} onChange={e=>handleChange('pet_name', e.target.value)} error={errors.pet_name} />
@@ -707,7 +748,7 @@
                                 </div>
                             </div>
 
-<div className="space-y-4 pt-6 border-t border-slate-200" id="signature">
+                            <div className="space-y-4 pt-6 border-t border-slate-200" id="signature">
                                 <div className="flex items-center justify-between">
                                     <label className="text-sm font-bold text-lion-navy flex items-center gap-2">
                                         <Icon name="pen-tool" size={18}/> 數位簽名 *
