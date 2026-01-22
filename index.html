@@ -2,298 +2,788 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
-    <title>LIONPETSSTORE | 數位契約系統</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>萊恩寵物沙龍精品旅館 | Lion Pet Beauty Casa</title>
     
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/react-datepicker@4.25.0/dist/react-datepicker.min.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        lion: {
+                            navy: '#1B365D',      /* 深海軍藍 */
+                            gold: '#C5A065',      /* 香檳金 */
+                            light: '#F5F5F7',     /* 淺灰白 */
+                            line: '#06C755',      /* LINE 綠色 */
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                        serif: ['"Playfair Display"', 'serif']
+                    },
+                    animation: {
+                        'scroll': 'scroll 25s linear infinite',
+                        'fade-in': 'fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+                        'slide-up': 'slideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 10s infinite ease-in-out',
+                        'float-delayed': 'float 12s infinite ease-in-out reverse',
+                    },
+                    keyframes: {
+                        scroll: {
+                            '0%': { transform: 'translateX(0)' },
+                            '100%': { transform: 'translateX(-50%)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(100%)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translate(0, 0)' },
+                            '50%': { transform: 'translate(0, 20px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
-        :root {
-            --medical-blue: #005694;
-            --clean-cyan: #0ea5e9;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
         body {
             font-family: 'Noto Sans TC', sans-serif;
-            background-color: #f0f9ff;
-            color: #334155;
+            background-color: #F5F5F7;
+            color: #1B365D;
+            overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
         }
-        
-        .font-eng { font-family: 'Montserrat', sans-serif; }
 
-        /* 背景極光 */
-        .spa-background {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100vh;
-            z-index: 0;
-            pointer-events: none;
-            overflow: hidden;
-            background-image: 
-                radial-gradient(circle at 10% 10%, rgba(14, 165, 233, 0.05) 0%, transparent 40%),
-                radial-gradient(circle at 90% 90%, rgba(0, 86, 148, 0.05) 0%, transparent 40%);
-        }
-
-        .bubble {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(60px);
-            opacity: 0.6;
-            animation: float 15s infinite ease-in-out alternate;
-        }
-        
-        .bubble-1 { width: 600px; height: 600px; background: rgba(14, 165, 233, 0.1); top: -20%; right: -20%; }
-        .bubble-2 { width: 500px; height: 500px; background: rgba(6, 182, 212, 0.08); bottom: -10%; left: -10%; animation-delay: -5s; }
-
-        @keyframes float {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(30px, -40px) scale(1.1); }
-        }
-
-        /* 水晶容器 */
-        .glass-container {
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 100%);
-            backdrop-filter: blur(25px); 
-            -webkit-backdrop-filter: blur(25px);
-            border-top: 1.5px solid rgba(255, 255, 255, 0.95);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-            border-left: 1px solid rgba(255, 255, 255, 0.5);
-            border-right: 1px solid rgba(255, 255, 255, 0.5);
-            border-radius: 2.5rem;
-            box-shadow: 
-                0 20px 50px -10px rgba(14, 165, 233, 0.15),
-                inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-        }
-        
-        /* 服務卡片 (帶極光漸層) */
-        .service-card {
-            position: relative;
-            overflow: hidden;
-            border-radius: 1.5rem;
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(10px);
+        /* 升級版玻璃擬態 */
+        .glass-premium {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 10px 30px -10px rgba(14, 165, 233, 0.15), 0 4px 6px -2px rgba(14, 165, 233, 0.05);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 32px 0 rgba(27, 54, 93, 0.05);
+            border-radius: 1.5rem;
+            position: relative;
+            overflow: hidden;
         }
         
-        /* 內部極光背景 */
-        .service-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(224, 242, 254, 0.3) 50%, rgba(255,255,255,0.1) 100%);
-            z-index: 0;
+        .glass-premium::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 100%;
+            background: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 100%);
+            pointer-events: none; z-index: 0;
         }
 
-        /* 裝飾光暈 */
-        .card-decoration {
-            position: absolute;
-            top: -20px;
-            right: -20px;
-            width: 100px;
-            height: 100px;
-            background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, transparent 70%);
-            border-radius: 50%;
-            filter: blur(20px);
-            z-index: 0;
+        /* 背景光球 */
+        .bg-orb {
+            position: fixed; border-radius: 50%; filter: blur(80px); z-index: -1; opacity: 0.6;
         }
 
-        .service-card:active { transform: scale(0.98); }
-        .service-card:hover { 
-            border-color: #0ea5e9; 
-            box-shadow: 0 15px 40px -10px rgba(14, 165, 233, 0.25);
+        .cute-input { 
+            background: rgba(255, 255, 255, 0.8); border: 1px solid #E2E8F0; transition: all 0.3s ease;
+            color: #1B365D; font-size: 1rem; backdrop-filter: blur(4px);
+        }
+        .cute-input:focus { 
+            background: #ffffff; border-color: #C5A065; outline: none; box-shadow: 0 0 0 4px rgba(197, 160, 101, 0.15);
         }
 
-        .logo-container {
-            width: 100%;
-            padding-bottom: 0.2rem;
-            position: relative;
-            z-index: 10;
+        .radio-card {
+            transition: all 0.2s ease; border: 1px solid #E2E8F0; background: rgba(255, 255, 255, 0.6);
         }
-        .logo-container img {
-            width: 100%;
-            max-width: 280px;
-            margin: 0 auto;
-            display: block;
-            filter: drop-shadow(0 15px 25px rgba(14, 165, 233, 0.2));
+        .radio-card:active { transform: scale(0.98); }
+        .radio-card.selected {
+            background-color: #F8FAFC; border-color: #1B365D; border-width: 2px;
+            box-shadow: 0 4px 12px rgba(27, 54, 93, 0.1);
         }
+        .radio-card.danger.selected { background-color: #FEF2F2; border-color: #EF4444; }
 
-        .contact-pill {
-            background: rgba(255, 255, 255, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.9);
-            border-radius: 99px;
-            padding: 10px 24px;
-            font-size: 13px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.2s;
-            box-shadow: 0 4px 10px rgba(14, 165, 233, 0.05);
-            backdrop-filter: blur(4px);
-        }
-        .contact-pill:hover {
-            background: #fff;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(14, 165, 233, 0.15);
-            color: var(--medical-blue);
-        }
-
+        .fullscreen-signature { position: fixed; inset: 0; z-index: 100; background: white; display: flex; flex-direction: column; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="relative min-h-screen flex justify-center py-6 px-4">
-    
-    <div class="spa-background">
-        <div class="bubble bubble-1"></div>
-        <div class="bubble bubble-2"></div>
-    </div>
+<body>
+    <div class="bg-orb w-96 h-96 bg-blue-100 top-0 left-0 animate-float"></div>
+    <div class="bg-orb w-80 h-80 bg-orange-100 bottom-0 right-0 animate-float-delayed"></div>
+    <div class="bg-orb w-64 h-64 bg-purple-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse-slow"></div>
 
-    <div id="root" class="relative z-10 w-full max-w-lg glass-container overflow-hidden min-h-[85vh] flex flex-col"></div>
+    <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
-        const supabase = window.supabase.createClient('https://fpkzuotxxbsqisgwupix.supabase.co', 'sb_publishable_VsAJfSi7Fb3zu_A5Ksm2wA_mAUkDLBs'); 
+        const { useState, useEffect, useRef, useMemo } = React;
 
+        const mockSubmit = async (data) => {
+            return new Promise((resolve) => setTimeout(() => resolve({ status: 'success' }), 1500));
+        };
+
+        // --- Icons (防當機版) ---
         const Icon = ({ name, size = 20, className = "" }) => {
             const iconRef = useRef(null);
             useEffect(() => {
-                if (typeof window.lucide !== 'undefined' && iconRef.current) {
-                    window.lucide.createIcons({
-                        root: iconRef.current, attrs: { "stroke-width": 2, class: className }, name: name, nameAttr: 'data-lucide'
-                    });
+                if (iconRef.current) {
+                    iconRef.current.innerHTML = '';
+                    const i = document.createElement('i');
+                    i.setAttribute('data-lucide', name);
+                    i.style.width = '100%';
+                    i.style.height = '100%';
+                    iconRef.current.appendChild(i);
+                    lucide.createIcons({ root: iconRef.current });
                 }
-            }, [name, className]);
-            return <span ref={iconRef} className="inline-flex items-center justify-center"><i data-lucide={name} style={{ width: size, height: size }}></i></span>;
+            }, [name]);
+            return <span ref={iconRef} style={{ width: size, height: size, display: 'inline-flex' }} className={className} />;
         };
 
+        const Marquee = () => {
+            const images = [
+                'line_oa_chat_260121_230912_group_0.jpg', 'line_oa_chat_260121_230912_group_1.jpg',
+                'line_oa_chat_260121_230912_group_2.jpg', 'line_oa_chat_260121_230908_group_0.jpg',
+                'line_oa_chat_260121_230908_group_1.jpg', 'line_oa_chat_260121_230908_group_2.jpg'
+            ];
+            return (
+                <div className="w-full overflow-hidden relative h-40 md:h-56 rounded-3xl mb-8 glass-premium border-0 shadow-lg group">
+                    <div className="absolute inset-0 z-10 bg-lion-navy/5 pointer-events-none group-hover:bg-transparent transition-colors"></div>
+                    <div className="flex w-[200%] animate-scroll h-full">
+                        {[...images, ...images].map((src, idx) => (
+                            <div key={idx} className="w-1/3 h-full flex-shrink-0 px-1">
+                                <img src={src} className="w-full h-full object-cover rounded-xl" alt="Environment" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const Toast = ({ message, type = 'error' }) => (
+            <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 rounded-full shadow-2xl text-white font-bold text-sm tracking-wide flex items-center gap-2 ${type === 'error' ? 'bg-red-500/90' : 'bg-lion-line/90'} backdrop-blur-md animate-fade-in border border-white/20`}>
+                <Icon name={type==='error'?'alert-circle':'check-circle'} size={18}/>
+                {message}
+            </div>
+        );
+
+        const InputWithError = ({ label, name, type = 'text', value, onChange, placeholder, error, className = '', ...props }) => (
+            <div className="space-y-1.5 w-full relative z-10">
+                {label && <label className="text-xs font-bold text-slate-500 ml-1">{label}</label>}
+                <input 
+                    name={name} type={type} value={value} onChange={onChange} 
+                    className={`w-full cute-input rounded-xl px-4 py-3 font-bold text-lion-navy placeholder-slate-300 ${error ? 'border-red-500 bg-red-50/50' : ''} ${className}`} 
+                    placeholder={placeholder} {...props}
+                />
+            </div>
+        );
+
+        // --- Terms Modal (強制閱讀條款彈窗) ---
+        const TermsModal = ({ isOpen, onClose, title, children, onAgree }) => {
+            const contentRef = useRef(null);
+            const [canAgree, setCanAgree] = useState(false);
+
+            useEffect(() => {
+                if (isOpen) {
+                    setCanAgree(false);
+                    document.body.style.overflow = 'hidden';
+                    setTimeout(() => {
+                        if (contentRef.current && contentRef.current.scrollHeight <= contentRef.current.clientHeight + 10) {
+                            setCanAgree(true);
+                        }
+                    }, 300);
+                } else {
+                    document.body.style.overflow = '';
+                }
+            }, [isOpen]);
+
+            const handleScroll = (e) => {
+                const { scrollTop, scrollHeight, clientHeight } = e.target;
+                if (scrollHeight - scrollTop - clientHeight < 50) setCanAgree(true);
+            };
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 z-[150] bg-lion-navy/40 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 animate-fade-in">
+                    <div className="bg-white w-full md:max-w-lg md:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col max-h-[85vh] md:max-h-[80vh] animate-slide-up">
+                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center shrink-0">
+                            <h3 className="text-lg font-serif font-bold text-lion-navy">{title}</h3>
+                            <button onClick={onClose} className="p-2 bg-slate-50 rounded-full hover:bg-slate-100 transition-colors">
+                                <Icon name="x" size={20} className="text-slate-400" />
+                            </button>
+                        </div>
+                        <div ref={contentRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-6 text-sm text-slate-600 leading-relaxed space-y-4">
+                            {children}
+                            <div className="h-10"></div>
+                        </div>
+                        <div className="p-5 border-t border-slate-100 bg-white md:rounded-b-3xl shrink-0 safe-area-bottom">
+                            {!canAgree && (
+                                <div className="text-center text-xs font-bold text-lion-gold mb-3 animate-pulse">👇 請滑動至最底部以同意條款</div>
+                            )}
+                            <button onClick={() => { if(canAgree) { onAgree && onAgree(); onClose(); } }} disabled={!canAgree}
+                                className={`w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all ${canAgree ? 'bg-lion-navy text-white shadow-lg active:scale-95 hover:bg-[#2A4B7C]' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}>
+                                <Icon name={canAgree ? "check-circle" : "lock"} size={20} />
+                                {canAgree ? "我已詳閱並同意" : "請閱讀完畢"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Main App ---
         const App = () => {
-            const [view, setView] = useState('entry');
-            const [isBoarding, setIsBoarding] = useState(false);
+            const [view, setView] = useState('home');
+            const [toast, setToast] = useState(null);
+            
+            // 表單資料
+            const [formData, setFormData] = useState({
+                // 通用
+                email: '', owner_name: '', phone: '', owner_id: '', address: '', 
+                emergency_name: '', emergency_phone: '',
+                pet_name: '', breed: '', sex: '', age_type: 'adult', age: '', age_months: '', weight: '', fix: '',
+                chip_status: '', chip_id: '', preferred_clinic: '',
+                legal_agree: false, signature: null,
+                // 美容專用
+                dog_traits: [], temperament: '', service_type: '',
+                // 住宿專用
+                checkin_date: '', checkout_date: '',
+                is_barking: '', has_boarding_exp: '', is_food_aggressive: '', use_peepad: '',
+                vaccine_status: '', deworming_status: '', cage_training: '', 
+                // 病史
+                medical_history: '無', medical_tags: [], medical_other: '',
+                food_allergy: '', personality_note: '', special_note: '',
+                // 高齡風險同意
+                high_risk_agree: false
+            });            
+            const [errors, setErrors] = useState({});
+            const [isSubmitting, setIsSubmitting] = useState(false);
+            const [showSuccess, setShowSuccess] = useState(false);
+            
+            // UI 狀態控制
+            const [showFullSig, setShowFullSig] = useState(false);
+            const [realtimeSig, setRealtimeSig] = useState(null);
+            const fullSigCanvasRef = useRef(null);
+            const padInstance = useRef(null);
+            const [lineConfirmed, setLineConfirmed] = useState(false);
+
+            // Modal & 條款狀態
+            const [activeModal, setActiveModal] = useState(null);
+            const [termsRead, setTermsRead] = useState({ basic: false, highRisk: false });
+
+            // 邏輯判斷
+            const isHighRisk = formData.age_type === 'adult' && parseInt(formData.age) >= 8;
+            const allTermsCompleted = useMemo(() => {
+                if (!termsRead.basic) return false;
+                if (isHighRisk && !termsRead.highRisk) return false;
+                return true;
+            }, [termsRead, isHighRisk]);
+
+            const handleTermAgree = (type) => {
+                setTermsRead(prev => ({ ...prev, [type]: true }));
+                if (type === 'highRisk') setFormData(prev => ({ ...prev, high_risk_agree: true }));
+            };
 
             useEffect(() => {
                 const handleHashChange = () => {
-                    const hash = window.location.hash;
-                    if (hash === '#boarding') { setView('client'); setIsBoarding(true); }
-                    else if (hash === '#grooming') { setView('client'); setIsBoarding(false); }
-                    else { setView('entry'); setIsBoarding(false); }
-                    window.scrollTo({top: 0, behavior: 'smooth'});
+                    const hash = window.location.hash.slice(1);
+                    if (hash === 'grooming' || hash === 'boarding' || hash === 'home') {
+                        setView(hash);
+                        window.scrollTo(0, 0);
+                    } else {
+                        setView('home');
+                    }
                 };
-                handleHashChange();
                 window.addEventListener('hashchange', handleHashChange);
+                handleHashChange();
                 return () => window.removeEventListener('hashchange', handleHashChange);
             }, []);
 
-            const navigateTo = (type) => { window.location.hash = type === 'boarding' ? '#boarding' : '#grooming'; };
+            const updateHash = (newView) => window.location.hash = newView;
+            
+            const showToastMsg = (msg, type='error') => {
+                setToast({ message: msg, type });
+                setTimeout(() => setToast(null), 3000);
+            };
 
-            if (view === 'entry') {
+            const handleChange = (field, value) => {
+                setFormData(prev => ({ ...prev, [field]: value }));
+                if (errors[field]) setErrors(prev => ({ ...prev, [field]: null }));
+            };
+
+            const toggleArray = (field, value) => {
+                setFormData(prev => {
+                    const arr = prev[field] || [];
+                    return { ...prev, [field]: arr.includes(value) ? arr.filter(i=>i!==value) : [...arr, value] };
+                });
+            };
+
+            const validate = () => {
+                const newErrors = {};
+                const commonRequired = ['email', 'owner_name', 'phone', 'address', 'emergency_name', 'emergency_phone', 'pet_name', 'breed', 'weight', 'sex', 'fix', 'chip_status'];
+                commonRequired.forEach(f => { if (!formData[f]) newErrors[f] = true; });
+
+                if (view === 'grooming') {
+                    if (!formData.temperament) newErrors.temperament = true;
+                    if (formData.dog_traits.length === 0) newErrors.dog_traits = true;
+                    if (!formData.service_type) newErrors.service_type = true;
+                } else if (view === 'boarding') {
+                    if (!formData.checkin_date) newErrors.checkin_date = true;
+                    if (!formData.checkout_date) newErrors.checkout_date = true;
+                    if (!formData.cage_training) newErrors.cage_training = true;
+                    if (!formData.is_barking) newErrors.is_barking = true;
+                    if (!formData.has_boarding_exp) newErrors.has_boarding_exp = true;
+                    if (!formData.is_food_aggressive) newErrors.is_food_aggressive = true;
+                    if (!formData.use_peepad) newErrors.use_peepad = true;
+                    if (!formData.vaccine_status) newErrors.vaccine_status = true;
+                    if (!formData.deworming_status) newErrors.deworming_status = true;
+                    if (!formData.medical_history) newErrors.medical_history = true;
+                }
+
+                if (formData.chip_status === '有晶片' && !formData.chip_id) newErrors.chip_id = true;
+                if (formData.age_type === 'adult' && parseInt(formData.age) >= 8 && !formData.high_risk_agree) { 
+                    showToastMsg('8歲以上毛孩請勾選高齡風險條款', 'error'); 
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                    return false; 
+                }
+
+                if (!lineConfirmed) { showToastMsg('請先完成 LINE 確認'); return false; }
+                if (!allTermsCompleted) { showToastMsg('請先詳閱上方條款按鈕並同意'); return false; }
+                if (!formData.legal_agree) { showToastMsg('請勾選同意所有契約內容'); return false; }
+                if (!realtimeSig) { showToastMsg('請完成數位簽名'); return false; }
+
+                setErrors(newErrors);
+                return Object.keys(newErrors).length === 0;
+            };
+
+            const handleSubmit = async () => {
+                if (!validate()) { showToastMsg('請檢查紅框欄位'); window.scrollTo({ top: 200, behavior: 'smooth' }); return; }
+                setIsSubmitting(true);
+                await mockSubmit();
+                setIsSubmitting(false);
+                setShowSuccess(true);
+            };
+
+// 新增：用來記錄畫布尺寸的 Ref
+            const canvasSizeRef = useRef({ width: 0, height: 0 });
+
+            // 修正簽名板邏輯 (解決手機無法簽名問題)
+            useEffect(() => {
+                let timer;
+                
+                // 防止手機在簽名時滾動畫面
+                const preventTouchMove = (e) => {
+                    if (showFullSig) e.preventDefault();
+                };
+
+                // 初始化畫布 (關鍵修復：處理高解析度螢幕)
+                const initCanvas = () => {
+                    const canvas = fullSigCanvasRef.current;
+                    if (!canvas) return;
+                    
+                    // 取得父容器的大小
+                    const container = canvas.parentElement;
+                    const rect = container.getBoundingClientRect();
+                    const displayWidth = rect.width;
+                    const displayHeight = rect.height;
+                    
+                    canvasSizeRef.current = { width: displayWidth, height: displayHeight };
+                    
+                    // 處理視網膜螢幕 (Retina Display) 縮放比例
+                    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+                    canvas.width = displayWidth * ratio;
+                    canvas.height = displayHeight * ratio;
+                    
+                    // 設定顯示大小
+                    canvas.style.width = displayWidth + 'px';
+                    canvas.style.height = displayHeight + 'px';
+                    
+                    const ctx = canvas.getContext("2d");
+                    ctx.scale(ratio, ratio);
+                    
+                    // 確保背景是白色 (避免存檔變黑色背景)
+                    ctx.fillStyle = "rgb(255, 255, 255)";
+                    ctx.fillRect(0, 0, displayWidth, displayHeight);
+                    
+                    // 重置並初始化 SignaturePad
+                    if (padInstance.current) {
+                        padInstance.current.off();
+                    }
+                    
+                    // 筆觸設定
+                    padInstance.current = new SignaturePad(canvas, { 
+                        penColor: "rgb(27, 54, 93)", // 改用萊恩的深藍色筆跡
+                        backgroundColor: "rgb(255, 255, 255)", 
+                        minWidth: 1.5,
+                        maxWidth: 4.0,
+                        throttle: 16, 
+                        minDistance: 3, 
+                        velocityFilterWeight: 0.7,
+                    });
+                };
+
+                if (showFullSig) {
+                    // 鎖定背景捲動
+                    document.body.style.overflow = 'hidden';
+                    document.addEventListener('touchmove', preventTouchMove, { passive: false });
+                    
+                    // 延遲一點點初始化，確保彈窗動畫結束，寬度正確
+                    timer = setTimeout(initCanvas, 150);
+                }
+                
+                return () => { 
+                    if (timer) clearTimeout(timer);
+                    if (padInstance.current) padInstance.current.off(); 
+                    
+                    // 解除鎖定
+                    document.body.style.overflow = '';
+                    document.removeEventListener('touchmove', preventTouchMove);
+                };
+            }, [showFullSig]);
+
+            const saveSignature = () => {
+                if (padInstance.current && !padInstance.current.isEmpty()) {
+                    setRealtimeSig(padInstance.current.toDataURL());
+                    setShowFullSig(false);
+                } else {
+                    showToastMsg('請先簽名');
+                }
+            };
+
+// --- Home View (Classic) ---
+            if (view === 'home') {
                 return (
-                    <div className="flex flex-col h-full">
-                        
-                        <div className="pt-10 pb-4 flex flex-col items-center relative">
-                            <div className="logo-container">
-                                <img src="logo.png" alt="LIONPETSSTORE" 
-                                    onError={(e) => e.target.src = 'https://placehold.co/544x320/transparent/005694?text=LION+png'} />
+                    <div className="min-h-screen relative flex flex-col font-sans">
+                        {/* 移除佔空間的空 nav，直接設定 main 的頂部間距 */}
+                        <main className="flex-1 px-6 pb-10 max-w-lg mx-auto w-full pt-12 md:pt-20">
+                            <div className="text-center mb-10 animate-fade-in relative z-10">
+                                <img src="logo.png" className="w-72 md:w-96 h-auto mx-auto object-contain drop-shadow-lg mb-6 hover:scale-105 transition-transform duration-500" />
+                                <p className="text-lion-gold text-[10px] font-bold tracking-[0.4em] uppercase">Luxury Pet Salon</p>
                             </div>
-                            
-                            <h1 className="font-eng text-xl font-black tracking-widest text-[#005694] mb-1">LIONPETSSTORE</h1>
-                            <p className="text-slate-500 text-[10px] font-bold tracking-widest uppercase">Premium Pet Salon & Hotel</p>
-                            
-                            {/* --- 資訊區塊回歸中間 (無卡片設計) --- */}
-                            <div className="mt-5 flex flex-col items-center gap-3">
-                                {/* 特寵字號膠囊 */}
-                                <span className="inline-block text-[10px] font-bold text-[#005694] border border-blue-200 bg-white/40 px-3 py-1 rounded-full tracking-wider shadow-sm backdrop-blur-sm">
-                                    特寵業字第 C1130686 號
-                                </span>
-
-                                {/* Hyponic 認證 (文字+盾牌) - 移除白底，保留精緻感 */}
-                                <div className="space-y-1 text-center">
-                                    <div className="flex items-center justify-center gap-2">
-                                        <Icon name="shield-check" size={18} className="text-[#005694]" />
-                                        <span className="text-xs font-bold text-[#005694]">嚴選 Hyponic 低敏洗劑</span>
-                                        <span className="text-[9px] bg-[#005694] text-white px-1.5 py-0.5 rounded shadow-sm tracking-wide">Excellent</span>
+                            <Marquee />
+                            <div className="space-y-5 animate-fade-in" style={{animationDelay:'0.1s'}}>
+                                <div onClick={() => updateHash('grooming')} className="glass-premium p-6 flex items-center gap-6 cursor-pointer hover:shadow-lg hover:border-lion-gold/30 transition-all border border-white group">
+                                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-lion-navy shadow-sm border border-slate-50 group-hover:bg-lion-navy group-hover:text-white transition-colors relative z-10"><Icon name="scissors" size={28} /></div>
+                                    <div className="flex-1 relative z-10">
+                                        <h3 className="text-xl font-serif font-bold text-lion-navy group-hover:text-lion-gold transition-colors">精緻美容</h3>
+                                        <p className="text-slate-500 text-xs mt-1">專業造型修剪 · 深層皮毛護理</p>
                                     </div>
-                                    {/* 強制不換行處理 */}
-                                    <p className="text-[9px] text-slate-500 font-medium whitespace-nowrap scale-95 origin-center">
-                                        使用韓國頂級品牌，榮獲 德國 Dermatest 皮膚科敏感性測試最高級別認證。
-                                    </p>
+                                    <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-lion-gold group-hover:text-white transition-colors relative z-10"><Icon name="chevron-right" size={16} /></div>
+                                </div>
+                                <div onClick={() => updateHash('boarding')} className="glass-premium p-6 flex items-center gap-6 cursor-pointer hover:shadow-lg hover:border-lion-gold/30 transition-all border border-white group">
+                                    <div className="w-16 h-16 bg-[#F9F5EC] rounded-2xl flex items-center justify-center text-lion-gold shadow-sm border border-slate-50 group-hover:bg-lion-gold group-hover:text-white transition-colors relative z-10"><Icon name="home" size={28} /></div>
+                                    <div className="flex-1 relative z-10">
+                                        <h3 className="text-xl font-serif font-bold text-lion-navy group-hover:text-lion-gold transition-colors">精品住宿</h3>
+                                        <p className="text-slate-500 text-xs mt-1">寬敞獨立空間 · 24H 溫濕度監控</p>
+                                    </div>
+                                    <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-lion-gold group-hover:text-white transition-colors relative z-10"><Icon name="chevron-right" size={16} /></div>
                                 </div>
                             </div>
-                        </div>
-
-                        <main className="px-6 pb-8 w-full space-y-6 flex-grow relative flex flex-col justify-center">
-                            
-                            <div className="grid gap-4 mt-2">
-                                {/* 美容按鈕 */}
-                                <button onClick={() => navigateTo('grooming')} className="service-card p-5 flex items-center justify-between group cursor-pointer">
-                                    <div className="card-decoration"></div>
-                                    <div className="flex items-center gap-5 relative z-10">
-                                        <div className="w-14 h-14 bg-gradient-to-br from-blue-50 to-blue-100 text-[#005694] rounded-2xl flex items-center justify-center shadow-inner border border-white/50">
-                                            <Icon name="scissors" size={26}/>
-                                        </div>
-                                        <div className="text-left">
-                                            <h3 className="font-bold text-lg text-slate-800">沙龍美容</h3>
-                                            <p className="text-xs text-[#0ea5e9] mt-0.5 font-eng font-bold tracking-widest">GROOMING</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-slate-400 relative z-10 bg-white/60 p-1.5 rounded-full group-hover:bg-white transition-colors shadow-sm">
-                                        <Icon name="chevron-right" size={20}/>
-                                    </div>
-                                </button>
-
-                                {/* 住宿按鈕 */}
-                                <button onClick={() => navigateTo('boarding')} className="service-card p-5 flex items-center justify-between group cursor-pointer">
-                                    <div className="card-decoration"></div>
-                                    <div className="flex items-center gap-5 relative z-10">
-                                        <div className="w-14 h-14 bg-gradient-to-br from-slate-50 to-slate-100 text-slate-600 rounded-2xl flex items-center justify-center shadow-inner border border-white/50">
-                                            <Icon name="home" size={26}/>
-                                        </div>
-                                        <div className="text-left">
-                                            <h3 className="font-bold text-lg text-slate-800">精品住宿</h3>
-                                            <p className="text-xs text-slate-500 mt-0.5 font-eng font-bold tracking-widest">BOARDING</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-slate-400 relative z-10 bg-white/60 p-1.5 rounded-full group-hover:bg-white transition-colors shadow-sm">
-                                        <Icon name="chevron-right" size={20}/>
-                                    </div>
-                                </button>
+                            <div className="mt-8 grid grid-cols-3 gap-4 animate-fade-in" style={{animationDelay:'0.2s'}}>
+                                <a href="tel:033608693" className="glass-premium p-4 flex flex-col items-center justify-center gap-2 hover:-translate-y-1 transition-transform border border-white group">
+                                    <Icon name="phone" className="text-slate-400 group-hover:text-lion-navy transition-colors" /><span className="text-[10px] font-bold text-lion-navy">撥打電話</span>
+                                </a>
+                                <a href="https://www.facebook.com/lionbeautycasa/?locale=zh_TW" target="_blank" className="glass-premium p-4 flex flex-col items-center justify-center gap-2 hover:-translate-y-1 transition-transform border border-white group">
+                                    <Icon name="facebook" className="text-[#1877F2]" /><span className="text-[10px] font-bold text-lion-navy">Facebook</span>
+                                </a>
+                                <a href="https://lin.ee/jS3JP5z" className="glass-premium p-4 flex flex-col items-center justify-center gap-2 hover:-translate-y-1 transition-transform border border-white group">
+                                    <img src="https://lionpetsstore.github.io/line.png" className="w-5 h-5 object-contain" /><span className="text-[10px] font-bold text-lion-navy">加好友</span>
+                                </a>
                             </div>
-
-                            <div className="pt-2 space-y-5">
-                                <a href="https://line.me/R/ti/p/lin.ee/jS3JP5z" className="w-full bg-white/60 border border-white/90 text-slate-600 py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow-sm backdrop-blur-sm hover:bg-white hover:shadow-md hover:-translate-y-0.5 transition-all active:scale-[0.98] cursor-pointer">
-                                    <img src="line.png" alt="LINE" className="w-6 h-6 object-contain" />
-                                    <span>LINE 官方帳號</span>
-                                </a>                           
-                                <div className="flex justify-center gap-4">
-                                    <a href="tel:033608693" className="contact-pill text-slate-600 hover:text-[#005694]">
-                                        <Icon name="phone" size={16}/> 撥打電話
-                                    </a>
-                                    <a href="https://www.facebook.com/lionbeautycasa/?locale=zh_TW" target="_blank" className="contact-pill text-slate-600 hover:text-[#1877F2]">
-                                        <Icon name="facebook" size={16}/> 粉絲專頁
-                                    </a>
-                                </div>
+                            <div className="mt-8 text-center animate-fade-in" style={{animationDelay:'0.3s'}}>
+                                <a href="https://maps.app.goo.gl/Kc4xdPe2KowoLcUR9" target="_blank" className="inline-flex items-center gap-2 text-lion-navy font-bold text-sm bg-white/80 backdrop-blur px-5 py-3 rounded-full shadow-sm border border-slate-100 hover:scale-105 hover:shadow-md hover:border-lion-gold/50 transition-all">
+                                    <Icon name="map-pin" size={18} className="text-lion-gold"/> 桃園市桃園區民族路199-2號
+                                </a>
                             </div>
-
                         </main>
-                        
-                        <footer className="text-center py-4 border-t border-white/40">
-                            <p className="text-[10px] text-slate-400 font-eng">桃園市桃園區民族路199-2號</p>
-                            <p className="text-[9px] text-slate-300 mt-1 font-eng">© LIONPETSSTORE 2024</p>
-                        </footer>
+                        <footer className="text-center py-8 text-[10px] text-slate-400 font-bold relative z-10"><p>特寵業字第 C1130686 號</p><p className="mt-1">© 2026 Lion Pet Beauty Casa.</p></footer>
                     </div>
                 );
             }
 
-            return <div className="min-h-screen flex items-center justify-center text-gray-400">載入中...</div>;
+            return (
+                <div className="min-h-screen pb-40">
+                    {toast && <Toast message={toast.message} type={toast.type} />}
+                    <nav className="fixed top-0 w-full z-40 bg-white/80 backdrop-blur-md border-b border-slate-200/50 shadow-sm transition-all">
+                        <div className="px-6 py-4 flex justify-between items-center max-w-5xl mx-auto">
+                            <div className="flex items-center gap-4 cursor-pointer group" onClick={() => updateHash('home')}>
+                                <img src="logo.png" className="w-16 h-16 md:w-20 md:h-20 object-contain group-hover:scale-105 transition-transform" /> 
+                                <div className="flex flex-col"><span className="font-serif font-bold text-lion-navy text-lg md:text-xl tracking-wide">LION PET</span><span className="text-[10px] md:text-xs text-lion-gold tracking-widest uppercase font-bold">Beauty Casa</span></div>
+                            </div>
+                            <button onClick={() => updateHash('home')} className="text-xs font-bold text-slate-500 bg-slate-100/80 px-4 py-2 rounded-full flex items-center gap-2 hover:bg-slate-200 transition-colors"><Icon name="arrow-left" size={14}/> <span className="hidden md:inline">返回首頁</span></button>
+                        </div>
+                    </nav>
+
+                    <main className="pt-28 px-4 md:px-8 max-w-4xl mx-auto space-y-8">
+                        <div className="text-center space-y-2 mb-8 relative z-10">
+                            <h2 className="text-2xl md:text-3xl font-serif font-bold text-lion-navy drop-shadow-sm">{view === 'boarding' ? '住宿預約與健康問卷' : '美容服務預約單'}</h2>
+                            <p className="text-sm text-slate-500 font-medium">請填寫以下資訊以完成預約</p>
+                        </div>
+
+                        <div className="glass-premium p-6 md:p-8 border-l-4 border-lion-line shadow-sm">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                                <div>
+                                    <h3 className="font-bold text-lion-navy text-xl flex items-center gap-2"><img src="https://lionpetsstore.github.io/line.png" className="w-7 h-7"/> 加入官方 LINE</h3>
+                                    <p className="text-sm text-slate-500 font-bold mt-1 ml-9">ID: @149veapq</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <a href="https://lin.ee/jS3JP5z" className="bg-slate-50/50 rounded-2xl p-4 text-center border hover:bg-white transition-colors group">
+                                    <div className="w-8 h-8 bg-lion-line text-white rounded-full flex items-center justify-center text-sm font-bold mx-auto mb-2 shadow-sm group-hover:scale-110 transition-transform">1</div><div className="text-base font-bold text-lion-line">點擊加入好友</div>
+                                </a>
+                                <div className="bg-red-50/50 rounded-2xl p-4 text-center border border-red-100">
+                                    <div className="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center text-sm font-bold mx-auto mb-2 shadow-sm animate-pulse-slow">2</div><div className="text-base font-bold text-red-600">務必「傳送貼圖」</div>
+                                </div>
+                            </div>
+                            <button onClick={() => setLineConfirmed(!lineConfirmed)} className={`w-full py-4 rounded-xl font-bold text-sm border transition-all ${lineConfirmed ? 'bg-lion-line text-white border-lion-line shadow-md' : 'bg-white text-slate-400 border-slate-300 hover:bg-slate-50'}`}>{lineConfirmed ? "✅ 我已完成上述兩步驟" : "確認：我已完成上述兩步驟"}</button>
+                        </div>
+
+                        {view === 'boarding' && (
+                            <section className="glass-premium p-6 md:p-8 space-y-5">
+                                <h3 className="font-bold text-lion-navy border-b border-slate-200 pb-3 flex items-center gap-2 text-lg"><Icon name="home" size={20}/> 住宿環境介紹</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="bg-[#FFF8E1]/60 p-5 rounded-2xl border border-[#FFE082]/30 backdrop-blur-sm"><h4 className="font-bold text-lion-navy mb-2 flex items-center gap-2 text-base"><Icon name="cat" size={18}/> 一樓：貓咪住宿</h4><p className="text-sm text-slate-600 leading-relaxed text-justify">貓咪專屬樓層，每日消毒、恆溫舒適。獨立空調循環，讓貓貓們能自在曬太陽、窩在柔軟的毯子裡發呆。</p></div>
+                                    <div className="bg-[#E3F2FD]/60 p-5 rounded-2xl border border-[#90CAF9]/30 backdrop-blur-sm"><h4 className="font-bold text-lion-navy mb-2 flex items-center gap-2 text-base"><Icon name="dog" size={18}/> 二樓：狗狗住宿</h4><p className="text-sm text-slate-600 leading-relaxed text-justify">每日陪玩、定時散步。夜間保姆巡房，不只是「寄放」，而是被照顧、被疼愛、被陪伴。</p></div>
+                                </div>
+                            </section>
+                        )}
+
+                        <section className="glass-premium p-6 md:p-8 space-y-6">
+                            <h3 className="font-bold text-lion-navy border-b border-slate-200 pb-3 flex items-center gap-2 text-lg"><Icon name="user" size={20}/> 飼主基本資料</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <InputWithError label="電子郵件 *" name="email" type="email" value={formData.email} onChange={e=>handleChange('email', e.target.value)} error={errors.email} placeholder="寄送契約副本用" />
+                                <InputWithError label="主人姓名 *" name="owner_name" value={formData.owner_name} onChange={e=>handleChange('owner_name', e.target.value)} error={errors.owner_name} />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="flex gap-3 items-end"><div className="flex-1"><InputWithError label="連絡電話 *" name="phone" type="tel" value={formData.phone} onChange={e=>handleChange('phone', e.target.value)} error={errors.phone} /></div><button className="bg-lion-navy text-white h-[50px] px-4 rounded-xl font-bold text-xs shadow-md hover:bg-blue-900 transition-colors whitespace-nowrap">舊客查詢</button></div>
+                                <InputWithError label={view==='boarding' ? "身分證字號 (入住請攜帶正本核對) *" : "身分證字號 *"} name="owner_id" value={formData.owner_id} onChange={e=>handleChange('owner_id', e.target.value)} />
+                            </div>
+                            <InputWithError label="通訊地址 *" name="address" value={formData.address} onChange={e=>handleChange('address', e.target.value)} error={errors.address} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-red-50/50 rounded-2xl border border-red-100">
+                                <InputWithError label="緊急聯絡人 *" name="emergency_name" value={formData.emergency_name} onChange={e=>handleChange('emergency_name', e.target.value)} error={errors.emergency_name} className="bg-white/80" />
+                                <InputWithError label="緊急電話 *" name="emergency_phone" value={formData.emergency_phone} onChange={e=>handleChange('emergency_phone', e.target.value)} error={errors.emergency_phone} className="bg-white/80" />
+                            </div>
+                        </section>
+
+                        <section className="glass-premium p-6 md:p-8 space-y-6">
+                            <h3 className="font-bold text-lion-navy border-b border-slate-200 pb-3 flex items-center gap-2 text-lg"><Icon name="paw-print" size={20}/> 寵物詳細資料</h3>
+                            {view === 'boarding' && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-lion-gold/10 p-5 rounded-2xl border border-lion-gold/20 mb-6">
+                                    <div className="space-y-1"><label className="text-xs font-bold text-lion-navy">入住日期 *</label><input type="date" className="w-full cute-input rounded-xl px-4 py-3 text-sm" value={formData.checkin_date} onChange={e=>handleChange('checkin_date', e.target.value)} /></div>
+                                    <div className="space-y-1"><label className="text-xs font-bold text-lion-navy">退房日期 *</label><input type="date" className="w-full cute-input rounded-xl px-4 py-3 text-sm" value={formData.checkout_date} onChange={e=>handleChange('checkout_date', e.target.value)} /></div>
+                                </div>
+                            )}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <InputWithError label="寵物名字 *" name="pet_name" value={formData.pet_name} onChange={e=>handleChange('pet_name', e.target.value)} error={errors.pet_name} />
+                                <InputWithError label="品種 *" name="breed" value={formData.breed} onChange={e=>handleChange('breed', e.target.value)} error={errors.breed} />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <InputWithError label="體重 (kg) *" name="weight" type="number" value={formData.weight} onChange={e=>handleChange('weight', e.target.value)} error={errors.weight} />
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-slate-500">年齡 *</label>
+                                    <div className="flex gap-2 mb-2">
+                                        <button onClick={()=>handleChange('age_type','adult')} className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-all ${formData.age_type==='adult' ? 'bg-lion-navy text-white' : 'bg-white/50 text-slate-500 border-slate-200'}`}>滿一歲</button>
+                                        <button onClick={()=>handleChange('age_type','baby')} className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-all ${formData.age_type==='baby' ? 'bg-lion-navy text-white' : 'bg-white/50 text-slate-500 border-slate-200'}`}>未滿一歲</button>
+                                    </div>
+                                    {formData.age_type==='adult' ? (
+                                        <input type="number" className="w-full cute-input rounded-xl px-4 py-3" placeholder="請輸入歲數" value={formData.age} onChange={e=>handleChange('age', e.target.value)} />
+                                    ) : (
+                                        <select className="w-full cute-input rounded-xl px-4 py-3" value={formData.age_months} onChange={e=>handleChange('age_months', e.target.value)}><option value="">選擇月齡</option>{[...Array(11)].map((_,i)=><option key={i} value={i+1}>{i+1} 個月</option>)}</select>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="space-y-2"><label className="text-xs font-bold text-slate-500">性別 *</label><div className="flex gap-2">{['公','母'].map(v=>(<button key={v} onClick={()=>handleChange('sex',v)} className={`flex-1 py-3 rounded-xl border text-sm font-bold transition-all ${formData.sex===v?'bg-lion-navy text-white border-lion-navy':'bg-white/50 text-slate-500 border-slate-300'}`}>{v}</button>))}</div>{errors.sex && <div className="text-red-500 text-[10px]">必選</div>}</div>
+                                <div className="space-y-2"><label className="text-xs font-bold text-slate-500">結紮 *</label><div className="flex gap-2">{['是','否'].map(v=>(<button key={v} onClick={()=>handleChange('fix',v)} className={`flex-1 py-3 rounded-xl border text-sm font-bold transition-all ${formData.fix===v?'bg-lion-navy text-white border-lion-navy':'bg-white/50 text-slate-500 border-slate-300'}`}>{v}</button>))}</div>{errors.fix && <div className="text-red-500 text-[10px]">必選</div>}</div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500">社交狀況 (可複選) *</label>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{['有攻擊性','無攻擊性','可與狗朋友們一起玩耍','不能與狗朋友們一起玩耍'].map(v=>(<div key={v} onClick={()=>toggleArray('dog_traits',v)} className={`radio-card p-4 rounded-xl cursor-pointer flex items-center justify-between ${formData.dog_traits.includes(v) ? 'selected' : ''}`}><span className="text-sm font-bold text-lion-navy">{v}</span><div className={`w-5 h-5 rounded-full border flex items-center justify-center radio-circle ${formData.dog_traits.includes(v) ? 'border-lion-navy bg-lion-navy' : 'border-slate-300'}`}></div></div>))}</div>{errors.dog_traits && <div className="text-red-500 text-[10px]">請至少選擇一項</div>}
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500">寵物美容性情與攻擊性評估 *</label>
+                                <div className="space-y-3">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {[
+                                            {val: '天使寶寶', title: '天使寶寶', desc: '個性溫和，無任何攻擊紀錄，也不怕生。'},
+                                            {val: '有點緊張', title: '有點緊張', desc: '膽小怕生，可能會低吼或閃躲，但未曾咬人。'}
+                                        ].map(item => (<div key={item.val} onClick={()=>handleChange('temperament', item.val)} className={`radio-card p-4 rounded-xl cursor-pointer flex items-start gap-3 h-full ${formData.temperament===item.val ? 'selected' : ''}`}><div className={`w-5 h-5 rounded-full border mt-0.5 shrink-0 flex items-center justify-center radio-circle ${formData.temperament===item.val ? 'border-lion-navy bg-lion-navy' : 'border-slate-300'}`}></div><div><div className="font-bold text-sm text-lion-navy">{item.title}</div><div className="text-xs text-slate-500 mt-1 leading-relaxed">{item.desc}</div></div></div>))}
+                                    </div>
+                                    <div onClick={()=>handleChange('temperament', '恰北北/護主')} className={`radio-card danger p-4 rounded-xl cursor-pointer flex items-start gap-3 ${formData.temperament==='恰北北/護主' ? 'selected' : ''}`}><div className={`w-5 h-5 rounded-full border mt-0.5 shrink-0 flex items-center justify-center radio-circle ${formData.temperament==='恰北北/護主' ? 'border-red-500 bg-red-500' : 'border-slate-300'}`}></div><div><div className="font-bold text-sm text-red-600 flex items-center gap-1">恰北北/護主 <Icon name="alert-triangle" size={14}/></div><div className="text-xs text-slate-500 mt-1 leading-relaxed">對於特定部位敏感，或看到陌生人會兇，曾有攻擊紀錄。</div><div className="text-xs font-bold text-red-500 mt-2 bg-red-50 px-3 py-1.5 rounded inline-block border border-red-100">⚠️ 請務必告知，讓我們做好防護</div></div></div>
+                                </div>
+                                {errors.temperament && <div className="text-red-500 text-[10px]">此欄位必填</div>}
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500">晶片 *</label>
+                                <div className="flex flex-wrap gap-2">{['有晶片','有晶片(號碼不詳)','無晶片'].map(v=>(<button key={v} onClick={()=>handleChange('chip_status',v)} className={`px-4 py-3 rounded-xl border text-sm font-bold transition-all flex-1 md:flex-none ${formData.chip_status===v ? 'bg-lion-navy text-white border-lion-navy' : 'bg-white/50 text-slate-500 border-slate-300'}`}>{v}</button>))}</div>
+                                {formData.chip_status === '有晶片' && <div className="animate-slide-down overflow-hidden"><input type="text" className="w-full cute-input rounded-xl px-4 py-3 mt-2 font-bold" placeholder="請輸入晶片號碼" value={formData.chip_id} onChange={e => handleChange('chip_id', e.target.value)} />{errors.chip_id && <div className="text-red-500 text-[10px] mt-1">請輸入號碼</div>}</div>}
+                            </div>
+                            <div className="space-y-3 pt-4 border-t border-slate-100">
+                                <label className="text-xs font-bold text-slate-500">過往病史 (可複選) *</label>
+                                <div className="flex gap-2">
+                                    <button onClick={()=>handleChange('medical_history', '有')} className={`flex-1 py-3 rounded-xl border font-bold transition-all flex items-center justify-center gap-2 ${formData.medical_history==='有' ? 'bg-lion-navy text-white border-lion-navy shadow-md' : 'bg-white/50 text-slate-400 border-slate-200 hover:border-lion-gold'}`}><Icon name="check-circle" size={18} className="mb-0.5"/> 有</button>
+                                    <button onClick={()=>{handleChange('medical_history', '無'); handleChange('medical_tags', []);}} className={`flex-1 py-3 rounded-xl border font-bold transition-all ${formData.medical_history==='無' ? 'bg-slate-100 text-slate-600 border-slate-200' : 'bg-white/50 text-slate-400 border-slate-200 hover:border-slate-300'}`}>無</button>
+                                </div>
+                                {formData.medical_history === '有' && <div className="animate-slide-down space-y-3 bg-slate-50/50 p-5 rounded-2xl border border-slate-200"><div className="flex flex-wrap gap-2">{['心臟病','氣喘','氣管塌陷','白內障','癲癇','心絲蟲','艾利希體','腹膜炎','腹積水','手術外傷未癒合','髖關節問題','骨折','腸炎','血便','血尿','懷孕','傳診性疾病','+ 其他'].map(tag => (<button key={tag} onClick={()=>toggleArray('medical_tags', tag)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${formData.medical_tags.includes(tag) ? (tag === '+ 其他' ? 'bg-lion-gold text-white border-lion-gold' : 'bg-lion-navy text-white border-lion-navy') : 'bg-white text-slate-500 border-slate-200 hover:border-lion-navy/30'}`}>{tag}</button>))}</div>{formData.medical_tags.includes('+ 其他') && <textarea className="w-full cute-input rounded-xl px-4 py-3 h-20 text-sm animate-fade-in focus:border-lion-gold" placeholder="請詳細說明其他病史..." value={formData.medical_other} onChange={e=>handleChange('medical_other', e.target.value)}></textarea>}</div>}
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500">指定就醫診療機構</label>
+                                <InputWithError name="preferred_clinic" value={formData.preferred_clinic} onChange={e=>handleChange('preferred_clinic', e.target.value)} placeholder="若未填寫，則送往特約醫院" />
+                                <div className="p-3 bg-slate-50/50 rounded-xl text-xs text-slate-500 flex items-start gap-2"><Icon name="info" size={16} className="text-lion-navy shrink-0 mt-0.5"/><span><span className="font-bold text-lion-navy">特約醫院：</span> [待確認]</span></div>
+                            </div>
+                        </section>
+
+                        {view === 'boarding' && (
+                            <section className="glass-premium p-6 md:p-8 space-y-6">
+                                <h3 className="font-bold text-lion-navy border-b border-slate-200 pb-3 flex items-center gap-2 text-lg"><Icon name="list-checks" size={20}/> 住宿行為與健康問卷</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                                    {[
+                                        { key: 'is_barking', label: '容易吠叫嗎', opts: ['會','不會'] },
+                                        { key: 'has_boarding_exp', label: '有住宿經驗嗎', opts: ['有','沒有'] },
+                                        { key: 'is_food_aggressive', label: '會護食嗎', opts: ['會','不會'] },
+                                        { key: 'use_peepad', label: '會用尿布墊嗎', opts: ['會','不會'] },
+                                        { key: 'vaccine_status', label: '定期施打疫苗', opts: ['有','沒有'] },
+                                        { key: 'deworming_status', label: '定期驅蟲', opts: ['有','無'] },
+                                    ].map(item => (<div key={item.key} className="flex flex-col gap-2"><label className="text-xs font-bold text-slate-500">{item.label} *</label><div className="flex gap-2">{item.opts.map(opt => (<button key={opt} onClick={()=>handleChange(item.key, opt)} className={`flex-1 py-3 rounded-xl border text-sm font-bold transition-all ${formData[item.key]===opt ? 'bg-lion-navy text-white border-lion-navy' : 'bg-white/50 text-slate-500 border-slate-300'}`}>{opt}</button>))}</div>{errors[item.key] && <div className="text-red-500 text-[10px]">必選</div>}</div>))}
+                                </div>
+                                <div className="space-y-3 pt-2">
+                                    <label className="text-xs font-bold text-slate-500">籠內訓練狀況 *</label>
+                                    <div className="space-y-2">
+                                        {['有，平常在家都有在圍欄內或籠子睡覺','有，以前有訓練過但日常沒有維持','有，但不確認現在能不能適應','沒有，但之前在外住宿在房間可以適應得很好','從來沒有'].map(opt => (<div key={opt} onClick={()=>handleChange('cage_training', opt)} className={`radio-card p-3 rounded-xl cursor-pointer flex items-center gap-3 ${formData.cage_training===opt ? 'selected' : ''}`}><div className={`w-4 h-4 rounded-full border shrink-0 radio-circle ${formData.cage_training===opt ? 'border-lion-navy bg-lion-navy' : 'border-slate-300'}`}></div><span className="text-xs font-bold text-lion-navy">{opt}</span></div>))}
+                                    </div>
+                                    {errors.cage_training && <div className="text-red-500 text-[10px]">必選</div>}
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                    <div className="space-y-1"><label className="text-xs font-bold text-lion-navy">飲食過敏</label><textarea className="w-full cute-input rounded-xl px-4 py-3 h-24 text-sm" placeholder="對什麼過敏嗎? (如雞肉/牛肉)" onChange={e=>handleChange('food_allergy', e.target.value)}></textarea></div>
+                                    <div className="space-y-1"><label className="text-xs font-bold text-lion-navy">個性備註</label><textarea className="w-full cute-input rounded-xl px-4 py-3 h-24 text-sm" placeholder="個性如何? 有分離焦慮嗎?" onChange={e=>handleChange('personality_note', e.target.value)}></textarea></div>
+                                    <div className="space-y-1 md:col-span-2"><label className="text-xs font-bold text-lion-navy">特別注意事項</label><textarea className="w-full cute-input rounded-xl px-4 py-3 h-24 text-sm" placeholder="有需要特別注意的嗎? 越詳細越好" onChange={e=>handleChange('special_note', e.target.value)}></textarea></div>
+                                </div>
+                            </section>
+                        )}
+
+                        {view === 'grooming' && (
+                            <section className="glass-premium p-6 md:p-8 space-y-5">
+                                <h3 className="font-bold text-lion-navy border-b border-slate-200 pb-3 flex items-center gap-2 text-lg"><Icon name="bath" size={20}/> 本次服務內容</h3>
+                                <div className="w-full">
+                                    <div className="grid grid-cols-2 gap-4 md:gap-6 mb-6">
+                                        <div onClick={()=>handleChange('service_type','精緻洗澡')} className={`w-full aspect-[1.1/1] md:aspect-[2.5/1] rounded-2xl cursor-pointer flex flex-col items-center justify-center text-center gap-2 md:gap-3 transition-all border-2 relative overflow-hidden group px-2 ${formData.service_type==='精緻洗澡'?'border-lion-navy bg-[#F8FAFC] shadow-lg shadow-blue-900/5':'border-slate-100 bg-white/60 hover:border-lion-gold'}`}><div className={`w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mb-1 transition-colors ${formData.service_type==='精緻洗澡'?'bg-lion-navy text-white':'bg-slate-50 text-lion-navy group-hover:bg-lion-gold/10'}`}><Icon name="droplets" size={24} strokeWidth={2} className="md:w-8 md:h-8"/></div><div><h4 className={`text-base md:text-xl font-serif font-bold mb-1 ${formData.service_type==='精緻洗澡'?'text-lion-navy':'text-slate-600'}`}>精緻洗澡</h4><p className="text-[10px] md:text-sm text-slate-400 leading-tight px-1">洗毛潤絲·剪指甲·清耳朵·肛門腺·修雜毛·眼部整理</p></div></div>
+                                        <div onClick={()=>handleChange('service_type','精緻美容')} className={`w-full aspect-[1.1/1] md:aspect-[2.5/1] rounded-2xl cursor-pointer flex flex-col items-center justify-center text-center gap-2 md:gap-3 transition-all border-2 relative overflow-hidden group px-2 ${formData.service_type==='精緻美容'?'border-lion-navy bg-[#F8FAFC] shadow-lg shadow-blue-900/5':'border-slate-100 bg-white/60 hover:border-lion-gold'}`}><div className={`w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mb-1 transition-colors ${formData.service_type==='精緻美容'?'bg-lion-navy text-white':'bg-slate-50 text-lion-navy group-hover:bg-lion-gold/10'}`}><Icon name="scissors" size={24} strokeWidth={2} className="md:w-8 md:h-8"/></div><div><h4 className={`text-base md:text-xl font-serif font-bold mb-1 ${formData.service_type==='精緻美容'?'text-lion-navy':'text-slate-600'}`}>精緻美容</h4><p className="text-[10px] md:text-sm text-slate-400 leading-tight px-1">基礎洗澡 + 全身造型修剪</p></div></div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4 md:gap-6">{['局部修剪','寵物安親'].map(v=>(<button key={v} onClick={()=>handleChange('service_type',v)} className={`w-full py-4 rounded-xl border font-bold text-sm md:text-base transition-all ${formData.service_type===v ? 'bg-lion-navy text-white border-lion-navy shadow-md' : 'bg-white/50 text-slate-400 border-slate-200 hover:border-lion-gold'}`}>{v}</button>))}</div>{errors.service_type && <div className="text-red-500 text-[10px] text-center mt-2">請選擇服務項目</div>}
+                                </div>
+                                <div className="bg-orange-50/80 backdrop-blur-sm p-4 rounded-xl text-xs md:text-sm text-orange-800 font-bold leading-relaxed border border-orange-100 flex gap-2 items-start mt-2"><Icon name="alert-triangle" size={18} className="shrink-0 mt-0.5"/><span>需於通知完成後一小時內接回，超過時間將收取 <span className="underline">$[待確認]/時</span> 安親費用</span></div>
+                            </section>
+                        )}
+
+                        <section className="glass-premium p-6 md:p-8 space-y-4">
+                            <h3 className="font-bold text-lion-navy border-b border-slate-200 pb-3 flex items-center gap-2 text-lg"><Icon name="message-circle" size={20}/> 其他需求或備註</h3>
+                            <textarea className="w-full cute-input rounded-xl px-4 py-3 h-24 text-sm" placeholder="請在此填寫其他需求或備註事項..." value={formData.additional_notes} onChange={e=>handleChange('additional_notes', e.target.value)}></textarea>
+                        </section>
+
+                        <section className="glass-premium p-6 md:p-8 space-y-8">
+                            <div className="bg-slate-50/50 p-6 rounded-2xl text-xs md:text-sm text-slate-500 space-y-3 border border-slate-200"><h4 className="font-bold text-lion-navy text-base mb-3 border-b border-slate-200 pb-2">乙方（店家資訊）</h4><div className="grid grid-cols-1 md:grid-cols-2 gap-2"><p><span className="font-bold text-lion-navy">店家名稱：</span>萊恩寵物沙龍精品旅館</p><p><span className="font-bold text-lion-navy">負責人：</span>[待確認]</p><p><span className="font-bold text-lion-navy">聯絡電話：</span>03-360-8693</p><p><span className="font-bold text-lion-navy">營業時間：</span>10:00-19:00</p><p className="md:col-span-2"><span className="font-bold text-lion-navy">營業地址：</span>桃園市桃園區民族路199-2號</p><p><span className="font-bold text-lion-navy">特寵業字號：</span>C1130686號</p><p><span className="font-bold text-lion-navy">緊急就醫：</span>[待確認]</p></div></div>
+
+                            {/* 法律條款與數位簽署 (修正版) */}
+                            <div className="space-y-6">
+                                <h3 className="font-bold text-lion-navy border-b pb-3 flex items-center gap-2 text-lg"><Icon name="file-text" size={20}/> 法律條款與數位簽署</h3>
+                                <div className="bg-slate-50 rounded-3xl p-6 space-y-4 border border-slate-200">
+                                    <button onClick={() => setActiveModal('basic')} className={`w-full flex items-center justify-between p-5 rounded-2xl border-2 transition-all group shadow-sm bg-white ${termsRead.basic ? 'border-lion-line/50' : 'border-lion-gold hover:border-lion-navy'}`}><div className="flex items-center gap-4"><div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${termsRead.basic ? 'bg-lion-line text-white' : 'bg-lion-gold/10 text-lion-gold'}`}><Icon name={termsRead.basic ? "check" : "file-text"} size={24}/></div><div className="text-left"><div className="font-bold text-base text-lion-navy">{view === 'boarding' ? '寄宿契約條款' : '美容服務契約條款'}</div><div className="text-xs text-slate-400 mt-0.5">{termsRead.basic ? '已完成閱讀與簽署' : '請點擊詳閱內容'}</div></div></div><div className={`px-3 py-1.5 rounded-lg text-xs font-bold ${termsRead.basic ? 'bg-lion-line/10 text-lion-line' : 'bg-lion-gold text-white'}`}>{termsRead.basic ? '已同意' : '待閱讀'}</div></button>
+                                    {isHighRisk && (<button onClick={() => setActiveModal('highRisk')} className={`w-full flex items-center justify-between p-5 rounded-2xl border-2 transition-all group shadow-sm bg-white animate-slide-down ${termsRead.highRisk ? 'border-lion-line/50' : 'border-red-400 hover:border-red-600'}`}><div className="flex items-center gap-4"><div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${termsRead.highRisk ? 'bg-lion-line text-white' : 'bg-red-100 text-red-500'}`}><Icon name={termsRead.highRisk ? "check" : "alert-triangle"} size={24}/></div><div className="text-left"><div className={`font-bold text-base ${termsRead.highRisk ? 'text-lion-navy' : 'text-red-600'}`}>高齡寵物風險告知</div><div className="text-xs text-slate-400 mt-0.5">{termsRead.highRisk ? '已完成閱讀與簽署' : '檢測到 8 歲以上，務必詳閱'}</div></div></div><div className={`px-3 py-1.5 rounded-lg text-xs font-bold ${termsRead.highRisk ? 'bg-lion-line/10 text-lion-line' : 'bg-red-500 text-white'}`}>{termsRead.highRisk ? '已同意' : '待閱讀'}</div></button>)}
+                                    <div onClick={() => { if (!allTermsCompleted) { showToastMsg("請先點擊上方按鈕，詳閱並同意所有條款", "error"); } }} className={`transition-all duration-300 ${!allTermsCompleted ? 'opacity-50' : ''}`}><label className={`flex items-center gap-4 p-5 rounded-2xl border-2 cursor-pointer transition-all bg-white ${!allTermsCompleted ? 'border-slate-200 pointer-events-none' : 'border-lion-navy/20 hover:border-lion-navy shadow-sm'}`}><div className="relative flex items-center"><input type="checkbox" checked={formData.legal_agree} onChange={e=> { if (allTermsCompleted) handleChange('legal_agree', e.target.checked); }} disabled={!allTermsCompleted} className="w-6 h-6 accent-lion-navy cursor-pointer" /></div><span className={`text-sm font-bold ${allTermsCompleted ? 'text-lion-navy' : 'text-slate-400'}`}>{allTermsCompleted ? "我已詳閱並同意上述所有契約內容" : "請先完成上方條款閱讀以解鎖此選項"}</span>{!allTermsCompleted && <Icon name="lock" size={16} className="text-slate-400 ml-auto" />}</label></div>
+                                </div>
+                            </div>
+
+<div className="space-y-4 pt-6 border-t border-slate-200" id="signature">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-sm font-bold text-lion-navy flex items-center gap-2">
+                                        <Icon name="pen-tool" size={18}/> 數位簽名 *
+                                    </label>
+                                    {realtimeSig && (
+                                        <button type="button" onClick={() => setRealtimeSig(null)} className="text-xs font-bold text-red-400 hover:text-red-500 flex items-center gap-1 transition-colors bg-red-50 px-3 py-1.5 rounded-full">
+                                            <Icon name="trash-2" size={14}/> 重簽
+                                        </button>
+                                    )}
+                                </div>
+                                
+                                {realtimeSig ? (
+                                    <div className="space-y-3 animate-fade-in">
+                                        <div className="bg-white rounded-2xl border-2 border-lion-navy/20 p-6 flex justify-center items-center min-h-[180px] shadow-inner relative overflow-hidden">
+                                            {/* 背景紋路 */}
+                                            <div className="absolute inset-0 opacity-5 bg-[radial-gradient(#1B365D_1px,transparent_1px)] [background-size:16px_16px]"></div>
+                                            <img src={realtimeSig} alt="您的簽名" className="max-h-[150px] object-contain relative z-10" />
+                                        </div>
+                                        <div className="flex items-center justify-end gap-3">
+                                            <div className="bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm border border-green-200">
+                                                <Icon name="check-circle" size={14}/> 已簽署
+                                            </div>
+                                            <div className="text-xs text-slate-400 font-bold bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
+                                                時間：{new Date().toLocaleString('zh-TW', { hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <button type="button" onClick={() => setShowFullSig(true)} 
+                                        className={`w-full min-h-[180px] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-3 transition-all group ${errors.signature ? 'border-red-500 bg-red-50/50 shake-error' : 'border-lion-navy/30 bg-white hover:border-lion-navy hover:bg-lion-gold/5'}`}>
+                                        <div className="w-16 h-16 rounded-full bg-lion-navy/5 flex items-center justify-center text-lion-navy group-hover:scale-110 group-hover:bg-lion-gold/20 transition-all">
+                                            <Icon name="pen-tool" size={28}/>
+                                        </div>
+                                        <span className="text-sm font-bold text-lion-navy">點擊此處開始簽名</span>
+                                        <span className="text-xs text-slate-400">將開啟全螢幕簽名板</span>
+                                    </button>
+                                )}
+                            </div>
+
+                            <button onClick={handleSubmit} disabled={isSubmitting} className="w-full py-5 bg-lion-navy text-white rounded-2xl font-bold text-lg shadow-xl shadow-blue-900/20 active:scale-95 transition-all flex items-center justify-center gap-3 hover:bg-[#2A4B7C] relative overflow-hidden group"><span className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>{isSubmitting ? '提交中...' : '確認並提交預約單'} <Icon name="send" size={20}/></button>
+                        </section>
+                    </main>
+
+                    <TermsModal isOpen={activeModal === 'basic'} onClose={() => setActiveModal(null)} title={view === 'boarding' ? '寄宿契約條款' : '美容服務契約條款'} onAgree={() => handleTermAgree('basic')}>
+                        <div className="space-y-4">
+                            <p className="font-bold text-lion-navy text-lg">歡迎來到萊恩寵物沙龍！</p><p>為確保毛孩安全與雙方權益，請詳閱以下內容：</p>
+                            <div className="space-y-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                <p><span className="font-bold text-lion-navy">1. 健康聲明：</span>飼主保證寵物無傳染性疾病，若有隱瞞需負擔相關責任。</p>
+                                <p><span className="font-bold text-lion-navy">2. 緊急醫療：</span>發生不適將送往特約動物醫院，費用由飼主負擔。</p>
+                                {view === 'boarding' ? (<><p><span className="font-bold text-lion-navy">3. 住宿規範：</span>入住時間 10:00-19:00，逾時將收取超時費用。</p><p><span className="font-bold text-lion-navy">4. 責任歸屬：</span>若因不可抗力或寵物自身宿疾引發之意外，本店不負賠償責任。</p></>) : (<><p><span className="font-bold text-lion-navy">3. 攻擊性告知：</span>若有攻擊性請務必告知，若因此造成美容師受傷，需負擔醫療費用。</p><p><span className="font-bold text-lion-navy">4. 接回時間：</span>美容完成後請於通知後一小時內接回。</p></>)}
+                            </div>
+                            <div className="space-y-2 text-slate-400 text-xs"><p>5. 個人資料保護：本店將妥善保管您的個人資料。</p><p>6. 肖像權使用：同意本店拍攝寵物照片用於社群分享。</p><p>7. 預約取消：如需取消請提前告知。</p><p>8. 其他未盡事宜，依本店現場公告為主。</p><div className="h-20"></div></div>
+                        </div>
+                    </TermsModal>
+
+                    <TermsModal isOpen={activeModal === 'highRisk'} onClose={() => setActiveModal(null)} title="高風險寵物服務風險告知" onAgree={() => handleTermAgree('highRisk')}>
+                        <div className="space-y-4">
+                            <div className="bg-red-50 p-4 rounded-xl border border-red-100 flex items-start gap-3"><Icon name="alert-triangle" className="text-red-500 shrink-0 mt-1" /><p className="text-red-700 font-bold text-sm">您的毛孩已滿 8 歲，屬於高齡階段。生理機能可能逐漸退化。</p></div>
+                            <div className="space-y-3 text-justify"><p>1. 高齡寵物在美容或住宿過程中，可能會因緊張或其他不可抗力因素，引發潛在健康風險（如心肺功能異常、休克等）。</p><p>2. 本店將盡最大努力照顧，但若因寵物自身年齡或隱疾導致之意外，本店不負損害賠償責任。</p><p>3. 若發生緊急狀況，同意授權本店立即送醫，相關費用由飼主負擔。</p></div><div className="h-20"></div>
+                        </div>
+                    </TermsModal>
+
+                    {showFullSig && (
+                        <div className="fullscreen-signature animate-fade-in"><div className="p-4 bg-lion-navy text-white flex justify-between items-center shrink-0 shadow-md"><span className="font-bold text-lg flex items-center gap-2"><Icon name="pen-tool" size={20}/> 請在此簽名</span><button onClick={()=>setShowFullSig(false)} className="p-2 hover:bg-white/10 rounded-full"><Icon name="x" size={24}/></button></div><div className="flex-1 bg-slate-100 relative p-4">
+                                <div className="absolute inset-4 bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+                                    <canvas ref={fullSigCanvasRef} className="w-full h-full block cursor-crosshair"></canvas>
+                                </div>
+                                <div className="absolute bottom-6 right-6 text-slate-300 text-xs font-bold pointer-events-none">LION PET SIGNATURE</div>
+                            </div><div className="p-6 bg-white border-t flex gap-4 shrink-0 safe-area-bottom"><button onClick={()=>{padInstance.current.clear()}} className="flex-1 py-4 bg-slate-100 font-bold text-slate-500 rounded-xl hover:bg-slate-200 transition-colors">清除重寫</button><button onClick={saveSignature} className="flex-[2] py-4 bg-lion-navy font-bold text-white rounded-xl shadow-lg hover:bg-[#2A4B7C] transition-colors">確認簽名</button></div></div>
+                    )}
+
+                    {showSuccess && (
+                        <div className="fixed inset-0 z-[200] bg-lion-navy/40 backdrop-blur-md flex items-center justify-center p-4"><div className="bg-white rounded-[2rem] p-8 max-w-sm w-full text-center space-y-6 animate-slide-down shadow-2xl"><div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto text-green-500 mb-2"><Icon name="check" size={48} strokeWidth={3} /></div><div><h3 className="text-2xl font-serif font-bold text-lion-navy mb-3">預約成功！</h3><p className="text-slate-500 text-sm leading-relaxed">您的資料已成功送出。<br/>我們會盡快透過電話或 LINE 與您確認。</p></div><button onClick={() => window.location.reload()} className="w-full py-4 bg-lion-navy text-white rounded-xl font-bold shadow-lg hover:bg-[#2A4B7C] transition-colors">返回首頁</button></div></div>
+                    )}
+                </div>
+            );
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
