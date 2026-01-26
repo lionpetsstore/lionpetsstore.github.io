@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>萊恩寵物沙龍精品旅館 | 後台管理系統</title>
+    <link rel="icon" href="logo.png" type="image/x-icon" />
+    <link rel="apple-touch-icon" href="logo.png" />
+    
+    <!-- React & Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        lion: {
+                            navy: '#1B365D',
+                            gold: '#C5A065',
+                            light: '#F5F5F7',
+                            cream: '#F5F5F7',
+                            red: '#EF4444',
+                            green: '#06C755'
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'slide-in-right': 'slideInRight 0.3s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
+                        slideInRight: { '0%': { transform: 'translateX(100%)' }, '100%': { transform: 'translateX(0)' } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Playfair+Display:wght@700&display=swap');
+        
+        body { 
+            font-family: 'Noto Sans TC', sans-serif; 
+            background-color: #F5F5F7;
+            color: #1B365D; 
+            -webkit-font-smoothing: antialiased; 
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .login-bg {
+            background-color: #F5F5F7;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(197, 160, 101, 0.08) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(27, 54, 93, 0.08) 0%, transparent 20%);
+        }
+
+        .lion-glass { 
+            background: rgba(255, 255, 255, 0.95); 
+            backdrop-filter: blur(12px); 
+            border: 1px solid rgba(255, 255, 255, 0.6); 
+            box-shadow: 0 10px 30px -10px rgba(27, 54, 93, 0.1); 
+            border-radius: 1.5rem; 
+        }
+
+        .edit-input {
+            width: 100%;
+            background: #fff;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 0.75rem;
+            font-size: 14px;
+            color: #1B365D;
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+        .edit-input:focus {
+            border-color: #C5A065;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(197, 160, 101, 0.15);
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            width: auto;
+            max-width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .tab-btn {
+            position: relative;
+            padding: 12px 20px;
+            font-weight: 700;
+            color: #9CA3AF;
+            transition: all 0.3s;
+        }
+        .tab-btn.active {
+            color: #1B365D;
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: #1B365D;
+            border-radius: 3px 3px 0 0;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #C5A065; border-radius: 3px; opacity: 0.5; }
+        
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; background: white; color: black; z-index: 9999; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+        // --- Configuration ---
+        const SUPABASE_URL = 'https://voicketevnkllfkglicf.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvaWNrZXRldm5rbGxma2dsaWNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2NTExNDMsImV4cCI6MjA4NDIyNzE0M30.8bSOz-desF2gq_Y63tHo5NsHOjOvt25d1QSYRQ8PI_s'; 
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const ADMIN_EMAIL = "lionpetsstore@gmail.com"; 
+        const STAFF_EMAIL = "staff@lionpetsstore.com";
+
+        const PERMISSIONS = {
+            [ADMIN_EMAIL]: { role: 'admin', canEdit: true, canDelete: true, canExport: true, canManage: true },
+            [STAFF_EMAIL]: { role: 'staff', canEdit: false, canDelete: false, canExport: false, canManage: false }
+        };
+
+        const STATUS_OPTIONS = [
+            { value: 'pending', label: '待確認', color: 'bg-yellow-100 text-yellow-700' },
+            { value: 'confirmed', label: '已確認', color: 'bg-lion-green/10 text-lion-green' },
+            { value: 'completed', label: '已完成', color: 'bg-blue-100 text-blue-700' },
+            { value: 'cancelled', label: '已取消', color: 'bg-red-100 text-red-700' }
+        ];
+
+        // --- Components ---
+
+        const Icon = ({ name, size = 20, className = "" }) => {
+            const iconRef = useRef(null);
+            useEffect(() => {
+                if (window.lucide && iconRef.current) window.lucide.createIcons({ root: iconRef.current, attrs: { class: className } });
+            }, [name, className]);
+            return <span ref={iconRef} className="inline-flex items-center justify-center"><i data-lucide={name} style={{ width: size, height: size }}></i></span>;
+        };
+
+        const Toast = ({ message, type = 'success', onClose }) => {
+            useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, [onClose]);
+            const styles = {
+                success: 'bg-lion-navy text-white border-lion-gold',
+                error: 'bg-lion-red text-white',
+                info: 'bg-white text-lion-navy border-lion-navy'
+            };
+            return (
+                <div className={`toast-container px-8 py-4 rounded-full flex items-center gap-3 animate-fade-in-down border-2 ${styles[type]}`}>
+                    <Icon name={type==='error'?'alert-circle':'check-circle'} size={20} />
+                    <span className="font-bold text-sm tracking-wide">{message}</span>
+                </div>
+            );
+        };
+
+        const ChangePasswordModal = ({ isOpen, onClose, showToast, currentUserEmail }) => {
+            const [oldPassword, setOldPassword] = useState('');
+            const [newPassword, setNewPassword] = useState('');
+            const [confirmPassword, setConfirmPassword] = useState('');
+            const [targetEmail, setTargetEmail] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+
+            useEffect(() => {
+                if (isOpen && currentUserEmail) {
+                    setTargetEmail(currentUserEmail);
+                    setOldPassword(''); setNewPassword(''); setConfirmPassword('');
+                }
+            }, [isOpen, currentUserEmail]);
+
+            const handleUpdatePassword = async () => {
+                if (!oldPassword) { showToast('請輸入舊密碼', 'error'); return; }
+                if (newPassword.length < 6) { showToast('新密碼長度至少需 6 個字元', 'error'); return; }
+                if (newPassword !== confirmPassword) { showToast('兩次輸入的新密碼不相符', 'error'); return; }
+                
+                setIsLoading(true);
+                try {
+                    // 1. 驗證舊密碼
+                    const { error: signInError } = await supabase.auth.signInWithPassword({ 
+                        email: targetEmail, 
+                        password: oldPassword 
+                    });
+
+                    if (signInError) throw new Error("舊密碼錯誤，無法驗證身分");
+
+                    // 2. 更新密碼
+                    const { error: updateError } = await supabase.auth.updateUser({ 
+                        password: newPassword 
+                    });
+
+                    if (updateError) throw updateError;
+                    
+                    showToast('✅ 密碼修改成功！系統將重新整理...', 'success');
+                    
+                    // 3. 強制重整
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+
+                } catch (error) {
+                    showToast(error.message || '修改失敗', 'error');
+                    setIsLoading(false); 
+                }
+            };
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm fade-in">
+                    <div className="bg-white w-full max-w-[380px] rounded-[32px] p-8 shadow-2xl relative overflow-hidden">
+                        
+                        {/* 頂部鎖頭圖示 */}
+                        <div className="flex justify-center mb-4">
+                            <div className="w-16 h-16 bg-[#F5F5F7] rounded-full flex items-center justify-center border border-[#C5A065]/30">
+                                <Icon name="lock" size={28} className="text-[#1B365D]" />
+                            </div>
+                        </div>
+
+                        {/* 標題 */}
+                        <div className="text-center mb-6">
+                            <h3 className="text-xl font-black text-[#1B365D] mb-1 tracking-wide">變更密碼</h3>
+                            <p className="text-xs text-gray-400 font-medium">請輸入您的密碼以完成變更</p>
+                        </div>
+
+                        {/* 身分切換 Tabs (僅管理員可見) */}
+                        {currentUserEmail === ADMIN_EMAIL ? (
+                            <div className="flex bg-gray-50 p-1.5 rounded-2xl mb-6 border border-gray-100">
+                                <button onClick={() => setTargetEmail(ADMIN_EMAIL)} className={`flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${targetEmail === ADMIN_EMAIL ? 'bg-white shadow-sm text-[#1B365D]' : 'text-gray-400 hover:text-gray-500'}`}>
+                                    <Icon name="shield" size={14} /> 管理員
+                                </button>
+                                <button onClick={() => setTargetEmail(STAFF_EMAIL)} className={`flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${targetEmail === STAFF_EMAIL ? 'bg-white shadow-sm text-blue-500' : 'text-gray-400 hover:text-gray-500'}`}>
+                                    <Icon name="user" size={14} /> 員工
+                                </button>
+                            </div>
+                        ) : (
+                            // 員工沒權限切換，但顯示當前身分
+                            <div className="flex items-center justify-center gap-2 mb-6 bg-blue-50 p-2 rounded-xl text-blue-600 font-bold text-sm">
+                                <Icon name="user" size={16} /> 員工帳號
+                            </div>
+                        )}
+
+                        {/* 輸入表單區 */}
+                        <div className="space-y-4">
+                            {/* 舊密碼 */}
+                            <div>
+                                <label className="text-xs font-bold text-gray-500 mb-1.5 block pl-1">
+                                    {targetEmail === ADMIN_EMAIL ? '管理員' : '員工'}舊密碼
+                                </label>
+                                <div className="relative">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                                        <Icon name="lock" size={16} />
+                                    </div>
+                                    <input type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 outline-none focus:border-[#1B365D] focus:ring-1 focus:ring-[#1B365D]/20 transition-all placeholder:text-gray-300" placeholder="輸入舊密碼" />
+                                </div>
+                            </div>
+
+                            {/* 新密碼 */}
+                            <div>
+                                <label className="text-xs font-bold text-gray-500 mb-1.5 block pl-1">新密碼</label>
+                                <div className="relative">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                                        <Icon name="key" size={16} />
+                                    </div>
+                                    <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 outline-none focus:border-[#1B365D] focus:ring-1 focus:ring-[#1B365D]/20 transition-all placeholder:text-gray-300" placeholder="輸入新密碼 (至少6位)" />
+                                </div>
+                            </div>
+
+                            {/* 確認新密碼 */}
+                            <div>
+                                <label className="text-xs font-bold text-gray-500 mb-1.5 block pl-1">確認新密碼</label>
+                                <div className="relative">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                                        <Icon name="check-circle" size={16} />
+                                    </div>
+                                    <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 outline-none focus:border-[#1B365D] focus:ring-1 focus:ring-[#1B365D]/20 transition-all placeholder:text-gray-300" placeholder="再次輸入新密碼" />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* 底部按鈕 */}
+                        <div className="flex gap-3 mt-8">
+                            <button onClick={onClose} disabled={isLoading} className="flex-1 py-3.5 rounded-xl bg-[#F3F4F6] text-gray-500 font-bold text-sm hover:bg-gray-200 transition-all">
+                                取消
+                            </button>
+                            <button onClick={handleUpdatePassword} disabled={isLoading} className="flex-1 py-3.5 rounded-xl bg-[#1B365D] text-white font-bold text-sm hover:bg-[#162a52] shadow-lg shadow-[#1B365D]/20 transition-all flex items-center justify-center gap-2">
+                                {isLoading ? <Icon name="loader-2" className="animate-spin" /> : <><Icon name="check" size={16} /> 確認變更</>}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const DashboardCharts = ({ bookings }) => {
+            const barRef = useRef(null);
+            const pieRef = useRef(null);
+            const charts = useRef({});
+
+            useEffect(() => {
+                if (!bookings.length) return;
+                
+                const monthlyRevenue = Array(12).fill(0);
+                const serviceCount = { '住宿': 0, '美容': 0 };
+
+                bookings.forEach(b => {
+                    const type = b.service_type === 'boarding' ? '住宿' : '美容';
+                    serviceCount[type]++;
+                    if (b.status !== 'cancelled' && b.created_at) {
+                        const month = new Date(b.created_at).getMonth();
+                        monthlyRevenue[month] += Number(b.total_amount || 0);
+                    }
+                });
+
+                Object.values(charts.current).forEach(c => c.destroy());
+
+                if (barRef.current) {
+                    charts.current.bar = new Chart(barRef.current, {
+                        type: 'bar',
+                        data: {
+                            labels: ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],
+                            datasets: [{ label: '營收 ($)', data: monthlyRevenue, backgroundColor: '#C5A065', borderRadius: 4 }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                    });
+                }
+
+                if (pieRef.current) {
+                    charts.current.pie = new Chart(pieRef.current, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['住宿', '美容'],
+                            datasets: [{ data: [serviceCount['住宿'], serviceCount['美容']], backgroundColor: ['#1B365D', '#C5A065'], borderWidth: 0 }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                    });
+                }
+                return () => Object.values(charts.current).forEach(c => c.destroy());
+            }, [bookings]);
+
+            return (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <div className="lion-glass p-6 lg:col-span-2 h-80">
+                        <h3 className="font-bold text-lion-navy mb-4 flex items-center gap-2"><Icon name="bar-chart-2" size={18}/> 營收趨勢</h3>
+                        <div className="h-60"><canvas ref={barRef}></canvas></div>
+                    </div>
+                    <div className="lion-glass p-6 h-80">
+                        <h3 className="font-bold text-lion-navy mb-4 flex items-center gap-2"><Icon name="pie-chart" size={18}/> 服務佔比</h3>
+                        <div className="h-60"><canvas ref={pieRef}></canvas></div>
+                    </div>
+                </div>
+            );
+        };
+
+        const CalendarView = ({ bookings, onSelect }) => {
+            const [date, setDate] = useState(new Date());
+            const year = date.getFullYear();
+            const month = date.getMonth();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const firstDay = new Date(year, month, 1).getDay();
+            const days = Array(firstDay).fill(null).concat(Array.from({length: daysInMonth}, (_, i) => i + 1));
+
+            const getEvents = (d) => {
+                if (!d) return [];
+                const currentStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                return bookings.filter(b => {
+                    if (b.status === 'cancelled') return false;
+                    const created = b.created_at.split('T')[0];
+                    if (b.service_type === 'boarding' && b.check_in_date && b.check_out_date) {
+                        return currentStr >= b.check_in_date && currentStr <= b.check_out_date;
+                    }
+                    return created === currentStr;
+                });
+            };
+
+            return (
+                <div className="lion-glass overflow-hidden border border-white">
+                    <div className="p-4 bg-lion-cream border-b flex justify-between items-center">
+                        <button onClick={()=>setDate(new Date(year, month-1, 1))} className="p-2 hover:bg-white rounded-full"><Icon name="chevron-left"/></button>
+                        <h2 className="font-bold text-lion-navy text-lg">{year}年 {month+1}月</h2>
+                        <button onClick={()=>setDate(new Date(year, month+1, 1))} className="p-2 hover:bg-white rounded-full"><Icon name="chevron-right"/></button>
+                    </div>
+                    <div className="grid grid-cols-7 text-center py-2 bg-lion-navy text-white text-xs font-bold">
+                        {['日','一','二','三','四','五','六'].map(d=><div key={d}>{d}</div>)}
+                    </div>
+                    <div className="grid grid-cols-7 bg-white">
+                        {days.map((d, i) => {
+                            const events = getEvents(d);
+                            return (
+                                <div key={i} className={`min-h-[100px] border-r border-b border-gray-100 p-1 ${d?'hover:bg-lion-gold/5 cursor-pointer':''}`} onClick={()=>{if(d && events.length) onSelect(events[0])}}>
+                                    {d && (
+                                        <>
+                                            <div className="text-xs font-bold text-lion-navy mb-1">{d}</div>
+                                            <div className="space-y-1">
+                                                {events.slice(0,3).map(e => (
+                                                    <div key={e.id} className={`text-[10px] px-1 rounded truncate font-bold ${e.service_type==='boarding'?'bg-blue-50 text-blue-600':'bg-orange-50 text-orange-600'}`}>
+                                                        {e.pet_name}
+                                                    </div>
+                                                ))}
+                                                {events.length>3 && <div className="text-[10px] text-gray-400 text-center">+{events.length-3}</div>}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
+        const ConfirmModal = ({ isOpen, onClose, onConfirm, title, msg, currentUserEmail }) => {
+            const [pwd, setPwd] = useState('');
+            const [loading, setLoading] = useState(false);
+            if(!isOpen) return null;
+            const handle = async () => {
+                if(!pwd) return;
+                setLoading(true);
+                const { error } = await supabase.auth.signInWithPassword({ email: currentUserEmail, password: pwd });
+                if(error) { alert('密碼錯誤'); setLoading(false); }
+                else { await onConfirm(); setLoading(false); onClose(); }
+            };
+            return (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-lion-navy/60 backdrop-blur-sm p-4 animate-fade-in-down">
+                    <div className="bg-white p-8 rounded-3xl w-full max-w-sm text-center shadow-2xl">
+                        <div className="w-16 h-16 bg-lion-gold/10 rounded-full flex items-center justify-center mx-auto mb-4 text-lion-gold"><Icon name="lock" size={32}/></div>
+                        <h3 className="font-bold text-xl text-lion-navy mb-2">{title}</h3>
+                        <p className="text-sm text-gray-500 mb-6">{msg}</p>
+                        <input type="password" placeholder="請輸入密碼以確認" value={pwd} onChange={e=>setPwd(e.target.value)} className="w-full p-4 rounded-xl bg-gray-50 border border-gray-200 text-center font-bold mb-4 focus:border-lion-gold outline-none" autoFocus/>
+                        <div className="flex gap-3">
+                            <button onClick={onClose} className="flex-1 py-3 rounded-xl bg-gray-100 font-bold text-gray-500 hover:bg-gray-200">取消</button>
+                            <button onClick={handle} disabled={loading} className="flex-1 py-3 rounded-xl bg-lion-navy text-white font-bold hover:bg-lion-navy/90">{loading?'驗證中...':'確認執行'}</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Main App ---
+        const App = () => {
+            const [session, setSession] = useState(null);
+            const [view, setView] = useState('orders'); // orders, dashboard
+            const [subView, setSubView] = useState('list'); // list, calendar
+            const [bookings, setBookings] = useState([]);
+            
+            // Filter
+            const [filters, setFilters] = useState({ search:'', status:'all', type:'all', dateStart:'', dateEnd:'' });
+            
+            // UI
+            const [selected, setSelected] = useState(null);
+            const [isEditing, setIsEditing] = useState(false);
+            const [editForm, setEditForm] = useState({});
+            const [toast, setToast] = useState(null);
+            const [confirm, setConfirm] = useState({ show: false, action: null });
+            const [showPwd, setShowPwd] = useState(false);
+            
+            // Shop Note
+            const [shopNote, setShopNote] = useState('');
+            const saveShopNote = async () => {
+                const { error } = await supabase.from('bookings').update({ shop_note: shopNote }).eq('id', selected.id);
+                if(!error) {
+                    showToast('店家備註已更新', 'success');
+                    setSelected({...selected, shop_note: shopNote});
+                    setBookings(prev => prev.map(b => b.id === selected.id ? {...b, shop_note: shopNote} : b));
+                } else showToast('更新失敗', 'error');
+            };
+
+            // Login
+            const [login, setLogin] = useState({ email: '', pwd: '', loading: false, error: '' });
+            const userRole = session ? (PERMISSIONS[session.user.email] || PERMISSIONS[STAFF_EMAIL]) : PERMISSIONS[STAFF_EMAIL];
+            const showToast = (m, t) => setToast({ message: m, type: t });
+
+            useEffect(() => {
+                supabase.auth.getSession().then(({ data: { session } }) => {
+                    setSession(session);
+                    if (session) fetchBookings();
+                });
+            }, []);
+
+            const fetchBookings = async () => {
+                const { data } = await supabase.from('bookings').select('*').order('created_at', { ascending: false });
+                if (data) setBookings(data);
+            };
+
+            const handleLogin = async (e) => {
+                e.preventDefault();
+                setLogin({...login, loading: true});
+                const { data, error } = await supabase.auth.signInWithPassword({ email: login.email, password: login.pwd });
+                
+                if (error) {
+                    setLogin({...login, loading: false, error: '帳號或密碼錯誤'});
+                } else {
+                    setSession(data.session);
+                    fetchBookings();
+                    setLogin({...login, loading: false, error: ''});
+                }
+            };
+
+            const handleSave = async () => {
+                const { id, created_at, signature, ...updates } = editForm;
+                const { error } = await supabase.from('bookings').update(updates).eq('id', selected.id);
+                if(!error) { 
+                    showToast('儲存成功', 'success'); 
+                    setIsEditing(false); 
+                    fetchBookings(); 
+                    setSelected({...selected, ...updates}); 
+                } else showToast('儲存失敗', 'error');
+            };
+
+            const handleDelete = async () => {
+                if(!confirm('確定要刪除嗎？')) return;
+                const { error } = await supabase.from('bookings').delete().eq('id', selected.id);
+                if(!error) { showToast('已刪除', 'success'); setSelected(null); fetchBookings(); } 
+                else showToast('刪除失敗', 'error');
+            };
+
+            const filtered = useMemo(() => bookings.filter(b => {
+                const s = filters.search.toLowerCase();
+                if (!((b.owner_name||'').toLowerCase().includes(s) || (b.phone||'').includes(s) || (b.pet_name||'').toLowerCase().includes(s))) return false;
+                if (filters.status !== 'all' && b.status !== filters.status) return false;
+                
+                const isBoarding = b.service_type === 'boarding';
+                if (filters.type === 'boarding' && !isBoarding) return false;
+                if (filters.type === 'grooming' && isBoarding) return false;
+
+                if (filters.dateStart && b.created_at < filters.dateStart) return false;
+                if (filters.dateEnd && b.created_at > filters.dateEnd + 'T23:59:59') return false;
+                return true;
+            }), [bookings, filters]);
+
+            const stats = useMemo(() => ({
+                today: bookings.filter(b => b.created_at?.startsWith(new Date().toISOString().split('T')[0])).length,
+                pending: bookings.filter(b => b.status === 'pending').length,
+                boarding: bookings.filter(b => b.service_type === 'boarding').length,
+                grooming: bookings.filter(b => b.service_type === 'grooming').length,
+                total: bookings.length,
+                revenue: bookings.reduce((acc, b) => b.status!=='cancelled' ? acc+(Number(b.total_amount)||0) : acc, 0)
+            }), [bookings]);
+
+            const executeAction = async () => {
+                if (confirm.action === 'save') {
+                    const { id, created_at, signature, ...updates } = editForm;
+                    const { error } = await supabase.from('bookings').update(updates).eq('id', selected.id);
+                    if(!error) { showToast('儲存成功', 'success'); setIsEditing(false); fetchBookings(); setSelected({...selected, ...updates}); }
+                    else showToast('儲存失敗', 'error');
+                } else if (confirm.action === 'delete') {
+                    const { error } = await supabase.from('bookings').delete().eq('id', selected.id);
+                    if(!error) { showToast('已刪除', 'success'); setSelected(null); fetchBookings(); }
+                    else showToast('刪除失敗', 'error');
+                }
+            };
+
+            if (!session) return (
+                <div className="min-h-screen login-bg flex items-center justify-center p-6">
+                    <div className="lion-glass w-full max-w-[450px] p-10 text-center animate-fade-in-down">
+                        <div className="w-28 h-28 mx-auto mb-8 rounded-full shadow-2xl bg-white border-4 border-white overflow-hidden">
+                            <img src="logo.png" className="w-full h-full object-cover" />
+                        </div>
+                        <h1 className="text-2xl font-black text-lion-navy mb-1 tracking-widest">LION 管理系統</h1>
+                        <p className="text-xs text-lion-gold font-bold tracking-[0.4em] uppercase mb-10">Luxury Pet Salon</p>
+                        
+                        {!login.email ? (
+                            <div className="space-y-4">
+                                <button onClick={()=>setLogin({...login, email:ADMIN_EMAIL})} className="w-full py-5 rounded-2xl bg-white border-2 border-gray-100 hover:border-lion-navy hover:shadow-xl transition-all flex items-center justify-center gap-4 text-lion-navy font-bold text-lg group">
+                                    <div className="w-10 h-10 rounded-full bg-lion-navy text-white flex items-center justify-center group-hover:scale-110 transition-transform"><Icon name="shield"/></div>
+                                    管理員登入
+                                </button>
+                                <button onClick={()=>setLogin({...login, email:STAFF_EMAIL})} className="w-full py-5 rounded-2xl bg-white border-2 border-gray-100 hover:border-lion-gold hover:shadow-xl transition-all flex items-center justify-center gap-4 text-gray-500 font-bold text-lg group">
+                                    <div className="w-10 h-10 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center group-hover:scale-110 transition-transform"><Icon name="user"/></div>
+                                    員工登入
+                                </button>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleLogin} className="space-y-6 animate-fade-in">
+                                <div className="text-center mb-6">
+                                    <span className={`px-4 py-1.5 rounded-full text-xs font-bold ${login.email===ADMIN_EMAIL?'bg-lion-navy text-white':'bg-gray-200 text-gray-600'}`}>{login.email===ADMIN_EMAIL?'管理員身分':'員工身分'}</span>
+                                </div>
+                                <input type="password" placeholder="請輸入密碼" value={login.pwd} onChange={e=>setLogin({...login, pwd:e.target.value})} className="w-full p-5 rounded-2xl border-2 border-gray-100 bg-gray-50 text-center font-bold text-xl focus:border-lion-gold outline-none tracking-widest" autoFocus/>
+                                {login.error && <p className="text-lion-red text-sm font-bold animate-pulse">{login.error}</p>}
+                                <button disabled={login.loading} className="w-full py-5 rounded-2xl bg-lion-navy text-white font-bold text-lg shadow-xl shadow-lion-navy/30 hover:scale-[1.02] transition-transform">{login.loading?'驗證中...':'登入系統'}</button>
+                                <button type="button" onClick={()=>setLogin({...login, email:'', pwd:'', error:''})} className="text-gray-400 text-sm hover:text-lion-navy mt-4 font-bold transition-colors">← 切換帳號</button>
+                            </form>
+                        )}
+                        
+                        {/* 返回首頁按鈕 */}
+                        <a href="index.html" className="mt-8 pt-6 border-t border-gray-100 block text-gray-400 text-sm font-bold hover:text-lion-navy transition-colors flex items-center justify-center gap-2">
+                            <Icon name="arrow-left" size={16}/> 返回填寫頁面
+                        </a>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen bg-[#F5F5F7]">
+                    {toast && <Toast message={toast.message} type={toast.type} onClose={()=>setToast(null)} />}
+                    <ConfirmModal isOpen={confirm.show} onClose={()=>setConfirm({show:false})} onConfirm={executeAction} title="安全驗證" msg="請輸入密碼以確認執行此操作" currentUserEmail={session.user.email} />
+                    <ChangePasswordModal isOpen={showPwd} onClose={()=>setShowPwd(false)} showToast={showToast} currentUserEmail={session.user.email} />
+
+                    {/* Top Navbar */}
+                    <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-gray-200 px-6 py-3 flex justify-between items-center shadow-sm">
+                        <div className="flex items-center gap-3">
+                            <img src="logo.png" className="w-10 h-10 rounded-full border border-gray-200 shadow-sm" />
+                            <span className="font-bold text-xl text-lion-navy tracking-wide">LION 管理後台</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button onClick={fetchBookings} className="p-2.5 rounded-full hover:bg-gray-100 text-gray-500 transition-colors" title="重新整理">
+                                <Icon name="rotate-cw" size={20} />
+                            </button>
+                            {userRole.canManage && (
+                                <button onClick={()=>setShowPwd(true)} className="p-2.5 rounded-full hover:bg-gray-100 text-lion-gold transition-colors" title="修改密碼">
+                                    <Icon name="key" size={20} />
+                                </button>
+                            )}
+                            <button onClick={async()=>{await supabase.auth.signOut(); window.location.reload();}} className="p-2.5 rounded-full hover:bg-red-50 text-lion-red transition-colors" title="登出">
+                                <Icon name="log-out" size={20} />
+                            </button>
+                        </div>
+                    </nav>
+
+                    <main className="max-w-7xl mx-auto p-4 md:p-8 space-y-6">
+                        {/* Tabs */}
+                        <div className="flex gap-1 border-b border-gray-200">
+                            <button onClick={()=>setView('orders')} className={`px-6 py-3 font-bold text-sm flex items-center gap-2 border-b-2 transition-all ${view==='orders'?'border-lion-navy text-lion-navy':'border-transparent text-gray-400 hover:text-gray-600'}`}>
+                                <Icon name="clipboard-list" size={18}/> 訂單管理
+                            </button>
+                            <button onClick={()=>setView('dashboard')} className={`px-6 py-3 font-bold text-sm flex items-center gap-2 border-b-2 transition-all ${view==='dashboard'?'border-lion-navy text-lion-navy':'border-transparent text-gray-400 hover:text-gray-600'}`}>
+                                <Icon name="bar-chart-2" size={18}/> 數據儀表板
+                            </button>
+                        </div>
+
+                        {/* View Content */}
+                        {view === 'dashboard' && (
+                            <div className="space-y-6 animate-fade-in">
+                                {/* Stats Cards */}
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                                    {[
+                                        { t: '今日新增', v: stats.today, i: 'plus-circle', c: 'text-lion-navy', bg: 'bg-white' },
+                                        { t: '待確認', v: stats.pending, i: 'alert-circle', c: 'text-lion-gold', bg: 'bg-yellow-50' },
+                                        { t: '住宿預約', v: stats.boarding, i: 'home', c: 'text-blue-600', bg: 'bg-blue-50' },
+                                        { t: '洗澡美容', v: stats.grooming, i: 'scissors', c: 'text-pink-500', bg: 'bg-pink-50' },
+                                        { t: '總訂單數', v: stats.total, i: 'file-text', c: 'text-gray-600', bg: 'bg-gray-50' }
+                                    ].map((s,i) => (
+                                        <div key={i} className={`p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-28 ${s.bg}`}>
+                                            <div className="flex justify-between items-start">
+                                                <span className="text-xs font-bold text-gray-400">{s.t}</span>
+                                                <Icon name={s.i} size={16} className={s.c} />
+                                            </div>
+                                            <span className={`text-3xl font-black ${s.c}`}>{s.v}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <DashboardCharts bookings={bookings} />
+                            </div>
+                        )}
+                        
+                        {view === 'orders' && (
+                            <div className="space-y-4 animate-fade-in">
+                                {/* Filters Bar */}
+                                <div className="lion-glass p-4 space-y-3">
+                                    <div className="flex flex-col md:flex-row gap-4">
+                                        <div className="relative flex-1">
+                                            <Icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18}/>
+                                            <input type="text" placeholder="搜尋電話、寵物名、飼主姓名" value={filters.search} onChange={e=>setFilters({...filters, search:e.target.value})} className="w-full pl-12 pr-4 py-2.5 rounded-xl bg-gray-50 border-none font-bold text-lion-navy text-sm focus:ring-2 focus:ring-lion-gold/20 outline-none"/>
+                                        </div>
+                                        <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0">
+                                            <select value={filters.status} onChange={e=>setFilters({...filters, status:e.target.value})} className="px-4 py-2.5 rounded-xl bg-gray-50 font-bold text-sm text-lion-navy border-none min-w-[120px] outline-none">
+                                                <option value="all">全部狀態</option>
+                                                {STATUS_OPTIONS.map(s=><option key={s.value} value={s.value}>{s.label}</option>)}
+                                            </select>
+                                         
+                                            <select value={filters.type} onChange={e=>setFilters({...filters, type:e.target.value})} className="px-4 py-2.5 rounded-xl bg-gray-50 font-bold text-sm text-lion-navy border-none min-w-[120px] outline-none">
+                                                <option value="all">全部服務</option>
+                                                <option value="boarding">住宿</option>
+                                                <option value="grooming">美容</option>
+                                            </select>
+                                            <div className="flex items-center gap-2 bg-gray-50 px-3 rounded-xl">
+                                                <input type="date" value={filters.dateStart} onChange={e=>setFilters({...filters, dateStart:e.target.value})} className="bg-transparent text-sm font-bold text-lion-navy outline-none w-32"/>
+                                                <span className="text-gray-400">~</span>
+                                                <input type="date" value={filters.dateEnd} onChange={e=>setFilters({...filters, dateEnd:e.target.value})} className="bg-transparent text-sm font-bold text-lion-navy outline-none w-32"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 pt-2 border-t border-gray-100">
+                                        {['list','calendar'].map(mode => (
+                                            <button key={mode} onClick={()=>setSubView(mode)} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${subView===mode?'bg-lion-navy text-white shadow-md':'text-gray-500 hover:bg-gray-100'}`}>
+                                                <Icon name={mode==='list'?'list':'calendar'} size={14}/> 
+                                                {mode==='list'?'列表':'日曆'}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Main List/Table */}
+                                {subView === 'list' && (
+                                    <div className="space-y-3">
+                                        {filtered.length === 0 ? <div className="text-center py-20 text-gray-400 font-bold bg-white rounded-2xl border border-dashed border-gray-200">查無資料</div> : filtered.map(b => (
+                                            <div key={b.id} onClick={()=>{setSelected(b); setShopNote(b.shop_note||''); setIsEditing(false);}} className="bg-white p-5 rounded-[20px] shadow-sm border border-gray-100 cursor-pointer hover:border-lion-gold/50 hover:shadow-md transition-all group relative overflow-hidden">
+                                                <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${b.status==='pending'?'bg-yellow-400':b.status==='confirmed'?'bg-lion-green':b.status==='cancelled'?'bg-lion-red':'bg-blue-500'}`}></div>
+                                                
+                                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pl-3">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-3 mb-1">
+                                                            <div className="text-xs text-gray-400 font-mono">#{String(b.id).slice(0,8)}</div>
+                                                            <div className="text-xs text-gray-400 font-bold bg-gray-50 px-2 py-0.5 rounded">{new Date(b.created_at).toLocaleString()}</div>
+                                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${STATUS_OPTIONS.find(s=>s.value===b.status)?.color}`}>
+                                                                {STATUS_OPTIONS.find(s=>s.value===b.status)?.label}
+                                                            </span>
+                                                            {b.shop_note && <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-lion-navy text-white">店家備註</span>}
+                                                        </div>
+                                                        <div className="flex items-baseline gap-3">
+                                                            <span className="text-lg font-black text-lion-navy">{b.pet_name}</span>
+                                                            <span className="text-sm text-gray-500 font-bold">{b.owner_name}</span>
+                                                            <span className="text-xs text-gray-400">{b.phone}</span>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div className="flex items-center gap-4 justify-between md:justify-end w-full md:w-auto border-t md:border-none border-gray-100 pt-3 md:pt-0">
+                                                        <div className="text-xs font-bold text-lion-navy bg-lion-cream px-3 py-1.5 rounded-lg border border-lion-gold/20">
+                                                            {b.service_type==='boarding'?'🏠 住宿':'✂️ 美容'}
+                                                        </div>
+                                                        <div className="text-xl font-black text-lion-gold">${b.total_amount||0}</div>
+                                                        <Icon name="chevron-right" className="text-gray-300"/>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                
+                                {subView === 'calendar' && <CalendarView bookings={bookings} onSelect={(b)=>{setSelected(b); setShopNote(b.shop_note||''); setIsEditing(false);}} />}
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Detail Modal */}
+                    {selected && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-lion-navy/60 backdrop-blur-sm animate-fade-in" onClick={(e)=>{if(e.target===e.currentTarget&&!isEditing)setSelected(null)}}>
+                            <div className="bg-white w-full h-full md:h-[90vh] md:max-w-5xl md:rounded-[32px] shadow-2xl flex flex-col overflow-hidden animate-slide-up">
+                                <div className="px-8 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50 shrink-0">
+                                    <div>
+                                        <h2 className="text-2xl font-black text-lion-navy">訂單詳情</h2>
+                                        <p className="text-xs text-gray-400 font-bold mt-1">建立於 {new Date(selected.created_at).toLocaleString()}</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        {isEditing ? (
+                                            <>
+                                                <button onClick={()=>{setConfirm({show:true, action:'save'})}} className="bg-lion-green text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md flex gap-2 items-center hover:bg-lion-green/90 transition-colors"><Icon name="save" size={18}/> 儲存變更</button>
+                                                <button onClick={()=>setIsEditing(false)} className="bg-gray-100 text-gray-500 px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors">取消</button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                {userRole.canEdit && <button onClick={()=>{setEditForm(selected); setIsEditing(true);}} className="w-11 h-11 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center hover:bg-blue-100 transition-colors"><Icon name="pencil" size={20}/></button>}
+                                                {userRole.canDelete && <button onClick={()=>{setConfirm({show:true, action:'delete'})}} className="w-11 h-11 bg-red-50 text-red-600 rounded-full flex items-center justify-center hover:bg-red-100 transition-colors"><Icon name="trash-2" size={20}/></button>}
+                                                <button onClick={()=>window.print()} className="w-11 h-11 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"><Icon name="printer" size={20}/></button>
+                                                <button onClick={()=>setSelected(null)} className="w-11 h-11 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"><Icon name="x" size={24}/></button>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-[#F5F5F7]">
+                                    
+                                    {/* 店家內部備註 (置頂 / 員工可編) */}
+                                    <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-lion-navy/10">
+                                        <div className="flex justify-between items-center mb-3">
+                                            <label className="text-xs font-bold text-lion-navy uppercase tracking-wider flex items-center gap-2">
+                                                <Icon name="message-square" size={14} className="text-lion-gold"/> 店家內部備註 (僅內部可見)
+                                            </label>
+                                            <button onClick={saveShopNote} className="text-xs bg-lion-navy text-white px-3 py-1.5 rounded-lg font-bold hover:bg-lion-navy/90 transition-colors">儲存備註</button>
+                                        </div>
+                                        <textarea 
+                                            value={shopNote} 
+                                            onChange={e=>setShopNote(e.target.value)} 
+                                            placeholder="請輸入店家內部注意事項..." 
+                                            className="w-full p-4 rounded-xl bg-yellow-50/50 border border-yellow-100 text-lion-navy font-bold text-sm focus:border-lion-gold focus:bg-white outline-none transition-all resize-none h-24"
+                                        />
+                                    </div>
+
+                                    {/* 狀態變更 (僅檢視模式) */}
+                                    {!isEditing && (
+                                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                                            <label className="text-xs font-bold text-gray-400 mb-3 block uppercase tracking-wider">變更訂單狀態</label>
+                                            <div className="flex gap-3">
+                                                {STATUS_OPTIONS.map(s => (
+                                                    <button key={s.value} onClick={async()=>{
+                                                        const {error} = await supabase.from('bookings').update({status:s.value}).eq('id',selected.id);
+                                                        if(!error) { setSelected({...selected, status:s.value}); setBookings(prev=>prev.map(b=>b.id===selected.id?{...b,status:s.value}:b)); showToast('狀態已更新','success'); }
+                                                    }} className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold border-2 transition-all ${selected.status===s.value?'bg-lion-navy text-white border-lion-navy shadow-md':'bg-white text-gray-400 border-gray-200 hover:border-lion-gold'}`}>{s.label}</button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <Section title="飼主資訊" icon="user">
+                                            <DetailRow label="姓名" field="owner_name" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.owner_name} />
+                                            <DetailRow label="電話" field="phone" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.phone} />
+                                            <DetailRow label="地址" field="address" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.address} full />
+                                            <div className="col-span-2 pt-4 mt-2 border-t border-dashed border-gray-200">
+                                                <p className="text-xs font-bold text-lion-red mb-3 flex items-center gap-1"><Icon name="alert-circle" size={14}/> 緊急聯絡人</p>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <DetailRow label="姓名" field="emergency_name" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.emergency_name} />
+                                                    <DetailRow label="電話" field="emergency_phone" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.emergency_phone} />
+                                                </div>
+                                            </div>
+                                        </Section>
+
+                                        <Section title="寵物資料" icon="dog">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <DetailRow label="名字" field="pet_name" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.pet_name} />
+                                                <DetailRow label="品種" field="breed" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.breed} />
+                                                <DetailRow label="性別" field="sex" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.sex} />
+                                                <DetailRow label="結紮" field="fix" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.fix} />
+                                                <DetailRow label="年齡" field="age_value" form={editForm} setForm={setEditForm} editing={isEditing} val={`${selected.age_value} ${selected.age_type==='year'?'歲':'月'}`} />
+                                                <DetailRow label="體重" field="weight" form={editForm} setForm={setEditForm} editing={isEditing} val={`${selected.weight} kg`} />
+                                            </div>
+                                            <DetailRow label="晶片號碼" field="chip_id" form={editForm} setForm={setEditForm} editing={isEditing} val={`${selected.chip_status} ${selected.chip_id||''}`} full />
+                                        </Section>
+
+                                        <Section title="健康與外觀" icon="activity">
+                                            <DetailRow label="外觀檢查" field="physical_check" form={editForm} setForm={setEditForm} editing={isEditing} val={Array.isArray(selected.physical_check)?selected.physical_check.join('、')+(selected.physical_other?` (${selected.physical_other})`:''):'無'} full />
+                                            <DetailRow label="過往病史" field="medical_tags" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.medical_has==='有'?Array.isArray(selected.medical_tags)?selected.medical_tags.join('、')+(selected.medical_other?` (${selected.medical_other})`:''):'無':'無'} full />
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <DetailRow label="近期健檢" field="health_date" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.health_date} />
+                                                <DetailRow label="每月驅蟲" field="deworming_monthly" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.deworming_monthly} />
+                                            </div>
+                                        </Section>
+
+                                        <Section title="消費明細" icon="credit-card">
+                                            <div className="bg-lion-gold/10 p-4 rounded-xl border border-lion-gold/30 mb-4 flex justify-between items-end">
+                                                <div>
+                                                    <div className="text-xs font-bold text-lion-gold uppercase tracking-wider mb-1">Total Amount</div>
+                                                    <div className="text-2xl font-black text-lion-navy">${selected.total_amount}</div>
+                                                </div>
+                                                <div className="text-xs font-bold text-lion-navy bg-white/60 px-3 py-1.5 rounded-lg border border-white">
+                                                    {selected.service_type==='boarding'?'🏠 住宿':'✂️ 美容'}
+                                                </div>
+                                            </div>
+                                            <DetailRow label="服務項目" field="service_tags" form={editForm} setForm={setEditForm} editing={isEditing} val={Array.isArray(selected.service_tags)?selected.service_tags.join('、'):selected.service_tags} full />
+                                            <div className="grid grid-cols-2 gap-4 mt-4">
+                                                <DetailRow label="付款方式" field="payment_method" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.payment_method} />
+                                                {selected.service_type === 'boarding' && (
+                                                    <DetailRow label="房型" field="room_type" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.room_type} />
+                                                )}
+                                            </div>
+                                            {selected.service_type==='boarding' && (
+                                                <div className="grid grid-cols-2 gap-4 mt-2 bg-white p-3 rounded-xl border border-gray-100">
+                                                    <DetailRow label="入住日期" field="check_in_date" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.check_in_date} type="date" />
+                                                    <DetailRow label="退房日期" field="check_out_date" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.check_out_date} type="date" />
+                                                </div>
+                                            )}
+                                        </Section>
+                                    </div>
+
+                                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                                        <label className="text-xs font-bold text-gray-400 mb-3 block uppercase tracking-wider">顧客備註</label>
+                                        {isEditing ? <textarea className="w-full p-4 rounded-xl border-2 border-lion-gold/50 outline-none h-32 font-bold text-lion-navy text-sm resize-none" value={editForm.note||''} onChange={e=>setEditForm({...editForm,note:e.target.value})}/> : <div className="p-4 bg-gray-50 rounded-xl text-sm text-gray-600 whitespace-pre-wrap min-h-[80px]">{selected.note||'無備註'}</div>}
+                                    </div>
+
+                                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center">
+                                        <label className="text-xs font-bold text-gray-400 mb-4 block uppercase tracking-wider w-full text-left">客戶簽名</label>
+                                        {selected.signature ? (
+                                            <div className="w-full border-2 border-gray-100 rounded-xl p-6 flex flex-col items-center bg-gray-50/50">
+                                                <img src={selected.signature} className="h-32 object-contain mb-2"/>
+                                                <div className="text-[10px] text-gray-400 font-mono">Signed at: {selected.signature_time}</div>
+                                            </div>
+                                        ) : <div className="text-center text-gray-300 py-8 font-bold text-lg">無簽名</div>}
+                                    </div>
+                                </div>
+
+                                {/* 列印隱藏區 */}
+                                <div id="print-area" className="hidden">
+                                    <div className="p-10 text-black font-sans">
+                                        <div className="text-center border-b-2 border-black pb-4 mb-6">
+                                            <h1 className="text-3xl font-black mb-2">萊恩寵物沙龍精品旅館</h1>
+                                            <p className="text-lg font-bold">服務契約書</p>
+                                        </div>
+                                        <div className="flex justify-between mb-6 text-sm"><div>單號: #{selected.id}</div><div>日期: {new Date(selected.created_at).toLocaleDateString()}</div></div>
+                                        <div className="grid grid-cols-2 gap-8 mb-8">
+                                            <div className="border-2 border-black p-4">
+                                                <h3 className="font-bold border-b border-black pb-2 mb-2 text-lg">甲方 (飼主)</h3>
+                                                <p className="mb-1">姓名: {selected.owner_name}</p>
+                                                <p className="mb-1">電話: {selected.phone}</p>
+                                                <p className="mb-1">地址: {selected.address}</p>
+                                            </div>
+                                            <div className="border-2 border-black p-4">
+                                                <h3 className="font-bold border-b border-black pb-2 mb-2 text-lg">乙方 (寵物)</h3>
+                                                <p className="mb-1">名字: {selected.pet_name}</p>
+                                                <p className="mb-1">品種: {selected.breed}</p>
+                                                <p className="mb-1">體重: {selected.weight}kg</p>
+                                            </div>
+                                        </div>
+                                        <div className="border-2 border-black p-4 mb-8">
+                                            <h3 className="font-bold border-b border-black pb-2 mb-2 text-lg">服務內容</h3>
+                                            <p className="mb-2 text-lg">{Array.isArray(selected.service_tags)?selected.service_tags.join('、'):selected.service_tags}</p>
+                                            {selected.service_type==='boarding' && <p className="mb-2">入住: {selected.check_in_date} ~ {selected.check_out_date}</p>}
+                                            <p className="mt-4 font-bold text-right text-2xl">總金額: ${selected.total_amount}</p>
+                                        </div>
+                                        <div className="flex justify-between mt-16 align-bottom">
+                                            <div className="text-center w-1/3">
+                                                <img src={selected.signature} className="h-20 mx-auto mb-2"/>
+                                                <div className="border-t border-black pt-2">甲方簽章</div>
+                                            </div>
+                                            <div className="text-center w-1/3 pt-24 border-t border-black">乙方簽章</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const Section = ({ title, icon, children }) => (
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-lion-gold/20 transition-all">
+                <h3 className="font-bold text-lion-navy flex items-center gap-3 border-b border-gray-100 pb-4 mb-4 text-lg">
+                    <div className="p-2 bg-lion-navy/5 rounded-lg"><Icon name={icon} size={20} className="text-lion-gold" /></div>
+                    {title}
+                </h3>
+                <div className="space-y-4">{children}</div>
+            </div>
+        );
+
+        const DetailRow = ({ label, val, editing, field, form, setForm, full, type="text" }) => (
+            <div className={full ? 'col-span-2' : ''}>
+                <div className="text-[11px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">{label}</div>
+                {editing && field ? (
+                    <input type={type} className="edit-input bg-gray-50 border-gray-200 focus:bg-white" 
+                        value={form[field]||''} onChange={e=>setForm({...form, [field]:e.target.value})} />
+                ) : (
+                    <div className="text-sm font-bold text-lion-navy break-words min-h-[20px]">{val||'-'}</div>
+                )}
+            </div>
+        );
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
