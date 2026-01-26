@@ -1002,10 +1002,24 @@ if (view === 'home') {
             <ToastContainer />
             <div className="min-h-screen relative flex flex-col font-sans">
                 <main className="flex-1 px-6 pb-10 max-w-lg mx-auto w-full pt-12 md:pt-20">
-                    <div className="text-center mb-10 animate-fade-in relative z-10">
-                        <img src="logo.png" className="w-72 md:w-96 h-auto mx-auto object-contain drop-shadow-lg mb-6 hover:scale-105 transition-transform duration-500" onError={(e)=>{e.target.style.display='none'}} />
-                        <p className="text-lion-gold text-[10px] font-bold tracking-[0.4em] uppercase">Luxury Pet Salon</p>
-                    </div>
+<div className="text-center mb-10 animate-fade-in relative z-10">
+    <img 
+        src="logo.png" 
+        className="w-72 md:w-96 h-auto mx-auto object-contain drop-shadow-lg mb-6 hover:scale-105 transition-transform duration-500 cursor-pointer select-none" 
+        alt="Lion Pet Beauty Casa"
+        onDoubleClick={() => window.location.href = 'admin.html'}
+        onTouchEnd={(e) => {
+            // 檢查是否為雙擊：利用時間差判斷
+            const now = new Date().getTime();
+            if (now - (e.target.lastTouchEnd || 0) < 300) {
+                window.location.href = 'admin.html';
+            }
+            e.target.lastTouchEnd = now;
+        }}
+        onError={(e)=>{e.target.style.display='none'}}
+    />
+    <p className="text-lion-gold text-[10px] font-bold tracking-[0.4em] uppercase">Luxury Pet Salon</p>
+</div>
                     <Marquee />
                     <div className="space-y-5 animate-fade-in" style={{animationDelay:'0.1s'}}>
                         <div onClick={() => updateHash('grooming')} className="glass-premium p-6 flex items-center gap-6 cursor-pointer hover:shadow-lg hover:border-lion-gold/30 transition-all border border-white group">
