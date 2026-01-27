@@ -806,15 +806,10 @@ const validationRules = {
     // 基本資料
     owner_name: { required: true, message: '請輸入主人姓名' },
     is_owner: '是',  // 預設為是
-    phone: {
+phone: {
         required: true,
         pattern: /^09\d{8}$/,
         message: '請輸入正確的手機號碼格式 (09xxxxxxxx)'
-    },
-    email: {
-        required: true,
-        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-        message: '請輸入正確的電子郵件格式'
     },
     owner_id: {
         required: true,
@@ -896,12 +891,12 @@ if (!formData.checkOutDate) {
             newErrors.temperament = '請選擇放風模式';
             hasError = true;
         }
-        // 檢查訂金和尾款
-        if (!formData.deposit) {
+// 檢查訂金和尾款 (允許金額為 0)
+        if (isEmpty(formData.deposit)) {
             newErrors.deposit = '請輸入已支付訂金';
             hasError = true;
         }
-        if (!formData.balance) {
+        if (isEmpty(formData.balance)) {
             newErrors.balance = '請輸入尾款金額';
             hasError = true;
         }
@@ -1573,10 +1568,10 @@ return (
                             </section>
                         )}
 
-                        <section className="glass-premium p-6 md:p-8 space-y-6">
+<section className="glass-premium p-6 md:p-8 space-y-6">
                             <h3 className="font-bold text-lion-navy border-b border-slate-200 pb-4 flex items-center gap-3 text-lg"><Icon name="user" size={20}/> 飼主基本資料</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <InputWithError label="電子郵件 *" name="email" type="email" value={formData.email} onChange={e=>handleChange('email', e.target.value)} error={errors.email} placeholder="寄送契約副本用" />
+                                <InputWithError label="電子郵件 (選填)" name="email" type="email" value={formData.email} onChange={e=>handleChange('email', e.target.value)} error={errors.email} placeholder="填寫則自動寄送契約副本" />
                                 <div className="grid grid-cols-[1.5fr,1fr] gap-4">
                                     <InputWithError label="主人姓名 *" name="owner_name" value={formData.owner_name} onChange={e=>handleChange('owner_name', e.target.value)} error={errors.owner_name} />
 <div className="space-y-2">
