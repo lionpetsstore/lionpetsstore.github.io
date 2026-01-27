@@ -6,7 +6,7 @@
     <title>萊恩寵物沙龍精品旅館 | 後台管理系統</title>
     <link rel="icon" href="logo.png" type="image/x-icon" />
     <link rel="apple-touch-icon" href="logo.png" />
-    
+    <link rel="manifest" href="manifest-admin.json">
     <!-- React & Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -204,7 +204,6 @@
                 
                 setIsLoading(true);
                 try {
-                    // 1. 驗證舊密碼
                     const { error: signInError } = await supabase.auth.signInWithPassword({ 
                         email: targetEmail, 
                         password: oldPassword 
@@ -212,7 +211,6 @@
 
                     if (signInError) throw new Error("舊密碼錯誤，無法驗證身分");
 
-                    // 2. 更新密碼
                     const { error: updateError } = await supabase.auth.updateUser({ 
                         password: newPassword 
                     });
@@ -221,7 +219,6 @@
                     
                     showToast('✅ 密碼修改成功！系統將重新整理...', 'success');
                     
-                    // 3. 強制重整
                     setTimeout(() => {
                         window.location.reload();
                     }, 1000);
@@ -262,7 +259,6 @@
                                 </button>
                             </div>
                         ) : (
-                            // 員工沒權限切換，但顯示當前身分
                             <div className="flex items-center justify-center gap-2 mb-6 bg-blue-50 p-2 rounded-xl text-blue-600 font-bold text-sm">
                                 <Icon name="user" size={16} /> 員工帳號
                             </div>
@@ -270,7 +266,6 @@
 
                         {/* 輸入表單區 */}
                         <div className="space-y-4">
-                            {/* 舊密碼 */}
                             <div>
                                 <label className="text-xs font-bold text-gray-500 mb-1.5 block pl-1">
                                     {targetEmail === ADMIN_EMAIL ? '管理員' : '員工'}舊密碼
@@ -283,7 +278,6 @@
                                 </div>
                             </div>
 
-                            {/* 新密碼 */}
                             <div>
                                 <label className="text-xs font-bold text-gray-500 mb-1.5 block pl-1">新密碼</label>
                                 <div className="relative">
@@ -294,7 +288,6 @@
                                 </div>
                             </div>
 
-                            {/* 確認新密碼 */}
                             <div>
                                 <label className="text-xs font-bold text-gray-500 mb-1.5 block pl-1">確認新密碼</label>
                                 <div className="relative">
@@ -329,11 +322,19 @@
                 if (!bookings.length) return;
                 
                 const monthlyRevenue = Array(12).fill(0);
-                const serviceCount = { '住宿': 0, '美容': 0 };
+                const serviceCount = { '住宿': 0, '美容': 0, '安親': 0 };
 
                 bookings.forEach(b => {
-                    const type = b.service_type === 'boarding' ? '住宿' : '美容';
+                    // 修正邏輯：判斷服務類型
+                    let type = '美容'; // 預設
+                    if (b.service_type === 'boarding') {
+                        type = '住宿';
+                    } else if (b.service_tags && Array.isArray(b.service_tags)) {
+                        if (b.service_tags.includes('安親')) type = '安親';
+                        else if (b.service_tags.includes('住宿')) type = '住宿';
+                    }
                     serviceCount[type]++;
+                    
                     if (b.status !== 'cancelled' && b.created_at) {
                         const month = new Date(b.created_at).getMonth();
                         monthlyRevenue[month] += Number(b.total_amount || 0);
@@ -357,8 +358,8 @@
                     charts.current.pie = new Chart(pieRef.current, {
                         type: 'doughnut',
                         data: {
-                            labels: ['住宿', '美容'],
-                            datasets: [{ data: [serviceCount['住宿'], serviceCount['美容']], backgroundColor: ['#1B365D', '#C5A065'], borderWidth: 0 }]
+                            labels: ['住宿', '美容', '安親'],
+                            datasets: [{ data: [serviceCount['住宿'], serviceCount['美容'], serviceCount['安親']], backgroundColor: ['#1B365D', '#C5A065', '#F59E0B'], borderWidth: 0 }]
                         },
                         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
                     });
@@ -394,7 +395,9 @@
                 return bookings.filter(b => {
                     if (b.status === 'cancelled') return false;
                     const created = b.created_at.split('T')[0];
-                    if (b.service_type === 'boarding' && b.check_in_date && b.check_out_date) {
+                    // 修正邏輯：判斷住宿日期
+                    const isBoarding = b.service_type === 'boarding' || (b.service_tags && b.service_tags.includes('住宿'));
+                    if (isBoarding && b.check_in_date && b.check_out_date) {
                         return currentStr >= b.check_in_date && currentStr <= b.check_out_date;
                     }
                     return created === currentStr;
@@ -420,11 +423,20 @@
                                         <>
                                             <div className="text-xs font-bold text-lion-navy mb-1">{d}</div>
                                             <div className="space-y-1">
-                                                {events.slice(0,3).map(e => (
-                                                    <div key={e.id} className={`text-[10px] px-1 rounded truncate font-bold ${e.service_type==='boarding'?'bg-blue-50 text-blue-600':'bg-orange-50 text-orange-600'}`}>
-                                                        {e.pet_name}
-                                                    </div>
-                                                ))}
+                                                {events.slice(0,3).map(e => {
+                                                    // 判斷顏色
+                                                    let colorClass = 'bg-orange-50 text-orange-600'; // 預設美容
+                                                    if (e.service_type === 'boarding' || (e.service_tags && e.service_tags.includes('住宿'))) {
+                                                        colorClass = 'bg-blue-50 text-blue-600'; // 住宿
+                                                    } else if (e.service_tags && e.service_tags.includes('安親')) {
+                                                        colorClass = 'bg-yellow-50 text-yellow-600'; // 安親
+                                                    }
+                                                    return (
+                                                        <div key={e.id} className={`text-[10px] px-1 rounded truncate font-bold ${colorClass}`}>
+                                                            {e.pet_name}
+                                                        </div>
+                                                    );
+                                                })}
                                                 {events.length>3 && <div className="text-[10px] text-gray-400 text-center">+{events.length-3}</div>}
                                             </div>
                                         </>
@@ -463,12 +475,176 @@
                 </div>
             );
         };
+        const CustomerCRM = ({ bookings, onSelectBooking }) => {
+            // 1. 彙整顧客與寵物資料
+            // 邏輯：以「電話」作為顧客唯一鍵值，以「電話+寵物名」作為寵物唯一鍵值
+            const customers = useMemo(() => {
+                const customerMap = {}; // 存放顧客資料
+                
+                bookings.forEach(b => {
+                    const ownerKey = b.phone; // 顧客鍵值：電話
+
+                    // 如果顧客不存在，初始化顧客資料
+                    if (!customerMap[ownerKey]) {
+                        customerMap[ownerKey] = {
+                            id: ownerKey,
+                            name: b.owner_name,
+                            phone: b.phone,
+                            email: b.email,
+                            address: b.address,
+                            totalSpent: 0,
+                            lastVisit: b.created_at,
+                            bookingIds: [],
+                            pets: {} // 使用物件存放寵物，方便去重
+                        };
+                    }
+
+                    const customer = customerMap[ownerKey];
+
+                    // 處理寵物資料
+                    const petKey = `${b.phone}_${b.pet_name}`; // 寵物鍵值：電話_名字
+                    if (!customer.pets[petKey]) {
+                        customer.pets[petKey] = {
+                            name: b.pet_name,
+                            breed: b.breed,
+                            type: b.pet_type || '未知', // 假設有這個欄位，若無可移除
+                            visitCount: 0,
+                            totalSpent: 0,
+                            lastVisit: b.created_at,
+                            services: [] // 紀錄服務項目
+                        };
+                    }
+
+                    const pet = customer.pets[petKey];
+
+                    // 更新顧客統計
+                    if (b.status !== 'cancelled') {
+                        customer.totalSpent += Number(b.total_amount || 0);
+                        pet.totalSpent += Number(b.total_amount || 0);
+                    }
+                    
+                    // 更新最近造訪日期 (顧客與寵物都要更新)
+                    if (new Date(b.created_at) > new Date(customer.lastVisit)) {
+                        customer.lastVisit = b.created_at;
+                    }
+                    if (new Date(b.created_at) > new Date(pet.lastVisit)) {
+                        pet.lastVisit = b.created_at;
+                    }
+
+                    pet.visitCount += 1;
+                    customer.bookingIds.push(b.id);
+                    
+                    // 紀錄服務項目 (簡單去重)
+                    const serviceName = Array.isArray(b.service_tags) ? b.service_tags.join('/') : b.service_tags;
+                    if (serviceName && !pet.services.includes(serviceName)) {
+                        pet.services.push(serviceName);
+                    }
+                });
+
+                // 將 pets 物件轉為陣列，並依照消費金額排序顧客
+                return Object.values(customerMap)
+                    .map(c => ({
+                        ...c,
+                        pets: Object.values(c.pets) // 將 pets 物件轉為陣列
+                    }))
+                    .sort((a, b) => b.totalSpent - a.totalSpent);
+            }, [bookings]);
+
+            return (
+                <div className="space-y-4 animate-fade-in">
+                    {/* CRM 標題與搜尋 */}
+                    <div className="lion-glass p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <h3 className="font-bold text-lion-navy text-lg flex items-center gap-2">
+                            <Icon name="users" size={20}/> 顧客名單 ({customers.length})
+                        </h3>
+                        <div className="relative w-full md:w-64">
+                            <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16}/>
+                            <input 
+                                type="text" 
+                                placeholder="搜尋姓名或電話..." 
+                                className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-50 border-none text-sm font-bold text-lion-navy focus:ring-2 focus:ring-lion-gold/20 outline-none"
+                            />
+                        </div>
+                    </div>
+
+                    {/* 顧客列表卡片 */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {customers.map(c => (
+                            <div key={c.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:border-lion-gold/50 hover:shadow-md transition-all cursor-pointer group">
+                                {/* 頂部：顧客基本資訊 */}
+                                <div className="flex justify-between items-start mb-4 border-b border-gray-100 pb-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-lion-navy/10 flex items-center justify-center text-lion-navy font-bold text-lg">
+                                            {c.name ? c.name.charAt(0) : '?'}
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-lion-navy">{c.name}</div>
+                                            <div className="text-xs text-gray-400">{c.phone}</div>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-xs font-bold text-gray-400">累計消費</div>
+                                        <div className="font-black text-lion-gold">${c.totalSpent.toLocaleString()}</div>
+                                    </div>
+                                </div>
+                                
+                                {/* 中部：寵物列表 (可展開/收合) */}
+                                <div className="space-y-2 mb-4">
+                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">關聯寵物 ({c.pets.length})</div>
+                                    {c.pets.map(p => (
+                                        <div key={`${c.phone}_${p.name}`} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg text-xs">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center text-lion-navy font-bold text-xs border border-gray-200">
+                                                    {p.name.charAt(0)}
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-gray-700">{p.name}</div>
+                                                    <div className="text-[10px] text-gray-400">{p.breed || '未知品種'} • {p.visitCount}次服務</div>
+                                                </div>
+                                            </div>
+                                            <div className="font-bold text-lion-gold text-xs">${p.totalSpent.toLocaleString()}</div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* 底部：操作按鈕 */}
+                                <div className="flex gap-2 pt-2 border-t border-gray-100">
+                                    <button 
+                                        onClick={() => {
+                                            if(onSelectBooking) onSelectBooking(c.phone);
+                                        }}
+                                        className="flex-1 py-2 rounded-lg bg-lion-navy text-white text-xs font-bold hover:bg-lion-navy/90 transition-colors flex items-center justify-center gap-1"
+                                    >
+                                        <Icon name="list" size={14}/> 訂單紀錄
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+            // 輔助函數：轉換為台灣時間字串
+            const formatTWTime = (isoString) => {
+                if (!isoString) return '';
+                const date = new Date(isoString);
+                // 使用 toLocaleString 並指定 timeZone 為 Asia/Taipei
+                return date.toLocaleString('zh-TW', { 
+                    timeZone: 'Asia/Taipei',
+                    year: 'numeric', 
+                    month: '2-digit', 
+                    day: '2-digit', 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    hour12: false
+                });
+            };
 
         // --- Main App ---
         const App = () => {
             const [session, setSession] = useState(null);
-            const [view, setView] = useState('orders'); // orders, dashboard
-            const [subView, setSubView] = useState('list'); // list, calendar
+            const [view, setView] = useState('orders'); // orders, dashboard, email
+            const [subView, setSubView] = useState('list'); // list, calendar, crm
             const [bookings, setBookings] = useState([]);
             
             // Filter
@@ -534,6 +710,12 @@
                     setSelected({...selected, ...updates}); 
                 } else showToast('儲存失敗', 'error');
             };
+            const handleCRMSelect = (phone) => {
+                // 1. 切換到列表視圖
+                setSubView('list');
+                // 2. 設定過濾器為該電話
+                setFilters(prev => ({ ...prev, search: phone }));
+            };
 
             const handleDelete = async () => {
                 if(!confirm('確定要刪除嗎？')) return;
@@ -547,9 +729,13 @@
                 if (!((b.owner_name||'').toLowerCase().includes(s) || (b.phone||'').includes(s) || (b.pet_name||'').toLowerCase().includes(s))) return false;
                 if (filters.status !== 'all' && b.status !== filters.status) return false;
                 
-                const isBoarding = b.service_type === 'boarding';
+                // 修正過濾邏輯：包含安親判斷
+                const isBoarding = b.service_type === 'boarding' || (b.service_tags && b.service_tags.includes('住宿'));
+                const isDaycare = b.service_tags && b.service_tags.includes('安親');
+                
                 if (filters.type === 'boarding' && !isBoarding) return false;
                 if (filters.type === 'grooming' && isBoarding) return false;
+                // 如果未來需要過濾安親，可以在此添加
 
                 if (filters.dateStart && b.created_at < filters.dateStart) return false;
                 if (filters.dateEnd && b.created_at > filters.dateEnd + 'T23:59:59') return false;
@@ -561,6 +747,7 @@
                 pending: bookings.filter(b => b.status === 'pending').length,
                 boarding: bookings.filter(b => b.service_type === 'boarding').length,
                 grooming: bookings.filter(b => b.service_type === 'grooming').length,
+                daycare: bookings.filter(b => b.service_tags && b.service_tags.includes('安親')).length,
                 total: bookings.length,
                 revenue: bookings.reduce((acc, b) => b.status!=='cancelled' ? acc+(Number(b.total_amount)||0) : acc, 0)
             }), [bookings]);
@@ -608,9 +795,7 @@
                                 <button disabled={login.loading} className="w-full py-5 rounded-2xl bg-lion-navy text-white font-bold text-lg shadow-xl shadow-lion-navy/30 hover:scale-[1.02] transition-transform">{login.loading?'驗證中...':'登入系統'}</button>
                                 <button type="button" onClick={()=>setLogin({...login, email:'', pwd:'', error:''})} className="text-gray-400 text-sm hover:text-lion-navy mt-4 font-bold transition-colors">← 切換帳號</button>
                             </form>
-                        )}
-                        
-                        {/* 返回首頁按鈕 */}
+                        )}                        
                         <a href="index.html" className="mt-8 pt-6 border-t border-gray-100 block text-gray-400 text-sm font-bold hover:text-lion-navy transition-colors flex items-center justify-center gap-2">
                             <Icon name="arrow-left" size={16}/> 返回填寫頁面
                         </a>
@@ -654,18 +839,23 @@
                             <button onClick={()=>setView('dashboard')} className={`px-6 py-3 font-bold text-sm flex items-center gap-2 border-b-2 transition-all ${view==='dashboard'?'border-lion-navy text-lion-navy':'border-transparent text-gray-400 hover:text-gray-600'}`}>
                                 <Icon name="bar-chart-2" size={18}/> 數據儀表板
                             </button>
+                            {/* 新增郵件紀錄分頁 */}
+                            <button onClick={()=>setView('email')} className={`px-6 py-3 font-bold text-sm flex items-center gap-2 border-b-2 transition-all ${view==='email'?'border-lion-navy text-lion-navy':'border-transparent text-gray-400 hover:text-gray-600'}`}>
+                                <Icon name="mail" size={18}/> 郵件紀錄
+                            </button>
                         </div>
 
                         {/* View Content */}
                         {view === 'dashboard' && (
                             <div className="space-y-6 animate-fade-in">
                                 {/* Stats Cards */}
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                                     {[
                                         { t: '今日新增', v: stats.today, i: 'plus-circle', c: 'text-lion-navy', bg: 'bg-white' },
                                         { t: '待確認', v: stats.pending, i: 'alert-circle', c: 'text-lion-gold', bg: 'bg-yellow-50' },
                                         { t: '住宿預約', v: stats.boarding, i: 'home', c: 'text-blue-600', bg: 'bg-blue-50' },
                                         { t: '洗澡美容', v: stats.grooming, i: 'scissors', c: 'text-pink-500', bg: 'bg-pink-50' },
+                                        { t: '寵物安親', v: stats.daycare, i: 'sun', c: 'text-orange-500', bg: 'bg-orange-50' },
                                         { t: '總訂單數', v: stats.total, i: 'file-text', c: 'text-gray-600', bg: 'bg-gray-50' }
                                     ].map((s,i) => (
                                         <div key={i} className={`p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-28 ${s.bg}`}>
@@ -709,13 +899,14 @@
                                         </div>
                                     </div>
                                     <div className="flex gap-2 pt-2 border-t border-gray-100">
-                                        {['list','calendar'].map(mode => (
+                                        {['list','calendar','crm'].map(mode => (
                                             <button key={mode} onClick={()=>setSubView(mode)} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${subView===mode?'bg-lion-navy text-white shadow-md':'text-gray-500 hover:bg-gray-100'}`}>
-                                                <Icon name={mode==='list'?'list':'calendar'} size={14}/> 
-                                                {mode==='list'?'列表':'日曆'}
+                                                <Icon name={mode==='list'?'list':mode==='calendar'?'calendar':'users'} size={14}/> 
+                                                {mode==='list'?'列表':mode==='calendar'?'日曆':'CRM'}
                                             </button>
                                         ))}
                                     </div>
+
                                 </div>
 
                                 {/* Main List/Table */}
@@ -728,8 +919,9 @@
                                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pl-3">
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center gap-3 mb-1">
-                                                            <div className="text-xs text-gray-400 font-mono">#{String(b.id).slice(0,8)}</div>
-                                                            <div className="text-xs text-gray-400 font-bold bg-gray-50 px-2 py-0.5 rounded">{new Date(b.created_at).toLocaleString()}</div>
+<div className="text-xs text-gray-400 font-mono">#{String(b.id).slice(-6).padStart(6, '0')}</div>
+<div className="text-xs text-gray-400 font-bold bg-gray-50 px-2 py-0.5 rounded">{formatTWTime(b.created_at)}</div>
+
                                                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${STATUS_OPTIONS.find(s=>s.value===b.status)?.color}`}>
                                                                 {STATUS_OPTIONS.find(s=>s.value===b.status)?.label}
                                                             </span>
@@ -743,9 +935,29 @@
                                                     </div>
                                                     
                                                     <div className="flex items-center gap-4 justify-between md:justify-end w-full md:w-auto border-t md:border-none border-gray-100 pt-3 md:pt-0">
-                                                        <div className="text-xs font-bold text-lion-navy bg-lion-cream px-3 py-1.5 rounded-lg border border-lion-gold/20">
-                                                            {b.service_type==='boarding'?'🏠 住宿':'✂️ 美容'}
-                                                        </div>
+                                                        {/* 修正服務標籤顯示邏輯 */}
+<div className="text-xs font-bold text-lion-navy bg-lion-cream px-3 py-1.5 rounded-lg border border-lion-gold/20">
+    {(() => {
+        // 1. 判斷主類型
+        const mainType = b.service_type === 'boarding' ? '🏠 住宿' : '✂️ 美容';
+        
+        // 2. 處理標籤顯示
+        let tagsText = '';
+        if (Array.isArray(b.service_tags)) {
+            // 如果是陣列且不為空，顯示第一個
+            tagsText = b.service_tags.length > 0 ? b.service_tags[0] : '基本方案';
+        } else if (b.service_tags) {
+            // 如果不是陣列但有值，直接顯示
+            tagsText = b.service_tags;
+        } else {
+            // 完全沒有資料時
+            tagsText = '';
+        }
+
+        // 3. 組合顯示
+        return `${mainType} • ${tagsText}`;
+    })()}
+</div>
                                                         <div className="text-xl font-black text-lion-gold">${b.total_amount||0}</div>
                                                         <Icon name="chevron-right" className="text-gray-300"/>
                                                     </div>
@@ -756,6 +968,17 @@
                                 )}
                                 
                                 {subView === 'calendar' && <CalendarView bookings={bookings} onSelect={(b)=>{setSelected(b); setShopNote(b.shop_note||''); setIsEditing(false);}} />}
+                                                                    {subView === 'crm' && <CustomerCRM bookings={bookings} onSelectBooking={handleCRMSelect} />}
+
+                            </div>
+                        )}
+
+                        {/* 新增：郵件紀錄視圖 (佔位) */}
+                        {view === 'email' && (
+                            <div className="bg-white p-10 rounded-2xl shadow-sm border border-gray-100 text-center animate-fade-in">
+                                <Icon name="mail" size={48} className="text-gray-300 mx-auto mb-4" />
+                                <h2 className="text-xl font-bold text-lion-navy mb-2">郵件紀錄</h2>
+                                <p className="text-gray-500">此功能正在開發中...</p>
                             </div>
                         )}
                     </main>
@@ -767,7 +990,8 @@
                                 <div className="px-8 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50 shrink-0">
                                     <div>
                                         <h2 className="text-2xl font-black text-lion-navy">訂單詳情</h2>
-                                        <p className="text-xs text-gray-400 font-bold mt-1">建立於 {new Date(selected.created_at).toLocaleString()}</p>
+<p className="text-xs text-gray-400 font-bold mt-1">建立於 {formatTWTime(selected.created_at)}</p>
+
                                     </div>
                                     <div className="flex gap-2">
                                         {isEditing ? (
@@ -823,6 +1047,9 @@
                                         <Section title="飼主資訊" icon="user">
                                             <DetailRow label="姓名" field="owner_name" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.owner_name} />
                                             <DetailRow label="電話" field="phone" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.phone} />
+                                            {/* 新增 Email 與 身分證欄位 */}
+                                            <DetailRow label="Email" field="email" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.email} />
+                                            <DetailRow label="身分證字號" field="owner_id" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.owner_id} />
                                             <DetailRow label="地址" field="address" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.address} full />
                                             <div className="col-span-2 pt-4 mt-2 border-t border-dashed border-gray-200">
                                                 <p className="text-xs font-bold text-lion-red mb-3 flex items-center gap-1"><Icon name="alert-circle" size={14}/> 緊急聯絡人</p>
@@ -843,6 +1070,8 @@
                                                 <DetailRow label="體重" field="weight" form={editForm} setForm={setEditForm} editing={isEditing} val={`${selected.weight} kg`} />
                                             </div>
                                             <DetailRow label="晶片號碼" field="chip_id" form={editForm} setForm={setEditForm} editing={isEditing} val={`${selected.chip_status} ${selected.chip_id||''}`} full />
+                                            {/* 新增個性標籤欄位 */}
+                                            <DetailRow label="個性標籤" field="social_traits" form={editForm} setForm={setEditForm} editing={isEditing} val={Array.isArray(selected.social_traits)?selected.social_traits.join('、'):selected.social_traits} full />
                                         </Section>
 
                                         <Section title="健康與外觀" icon="activity">
@@ -858,7 +1087,19 @@
                                             <div className="bg-lion-gold/10 p-4 rounded-xl border border-lion-gold/30 mb-4 flex justify-between items-end">
                                                 <div>
                                                     <div className="text-xs font-bold text-lion-gold uppercase tracking-wider mb-1">Total Amount</div>
-                                                    <div className="text-2xl font-black text-lion-navy">${selected.total_amount}</div>
+<DetailRow 
+    label="總金額" 
+    field="total_amount" 
+    form={editForm} 
+    setForm={setEditForm} 
+    editing={isEditing} 
+    val={selected.total_amount} 
+    type="number" 
+    isPrice={true} 
+    userRole={userRole}
+/>
+
+
                                                 </div>
                                                 <div className="text-xs font-bold text-lion-navy bg-white/60 px-3 py-1.5 rounded-lg border border-white">
                                                     {selected.service_type==='boarding'?'🏠 住宿':'✂️ 美容'}
@@ -890,7 +1131,8 @@
                                         {selected.signature ? (
                                             <div className="w-full border-2 border-gray-100 rounded-xl p-6 flex flex-col items-center bg-gray-50/50">
                                                 <img src={selected.signature} className="h-32 object-contain mb-2"/>
-                                                <div className="text-[10px] text-gray-400 font-mono">Signed at: {selected.signature_time}</div>
+<div className="text-[10px] text-gray-400 font-mono">簽署時間: {formatTWTime(selected.signature_time)}</div>
+
                                             </div>
                                         ) : <div className="text-center text-gray-300 py-8 font-bold text-lg">無簽名</div>}
                                     </div>
@@ -950,17 +1192,24 @@
             </div>
         );
 
-        const DetailRow = ({ label, val, editing, field, form, setForm, full, type="text" }) => (
-            <div className={full ? 'col-span-2' : ''}>
-                <div className="text-[11px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">{label}</div>
-                {editing && field ? (
-                    <input type={type} className="edit-input bg-gray-50 border-gray-200 focus:bg-white" 
-                        value={form[field]||''} onChange={e=>setForm({...form, [field]:e.target.value})} />
-                ) : (
-                    <div className="text-sm font-bold text-lion-navy break-words min-h-[20px]">{val||'-'}</div>
-                )}
-            </div>
-        );
+const DetailRow = ({ label, val, editing, field, form, setForm, full, type="text", isPrice, userRole }) => (
+    <div className={full ? 'col-span-2' : ''}>
+        <div className="text-[11px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">{label}</div>
+        {editing && field ? (
+            <input 
+                type={type} 
+                className="edit-input bg-gray-50 border-gray-200 focus:bg-white" 
+                value={form[field]||''} 
+                onChange={e=>setForm({...form, [field]:e.target.value})} 
+                // 這裡使用傳入的 userRole 來判斷是否禁用
+                disabled={isPrice && !userRole?.canManage} 
+            />
+        ) : (
+            <div className="text-sm font-bold text-lion-navy break-words min-h-[20px]">{val||'-'}</div>
+        )}
+    </div>
+);
+
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
