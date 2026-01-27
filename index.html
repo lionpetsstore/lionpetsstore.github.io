@@ -482,6 +482,323 @@ const HistoryModal = ({ records, onClose, onSelect }) => {
         </div>
     );
 };
+// --- 0. 工具函式 ---
+        const dataURLtoBlob = (dataurl) => {
+            if(!dataurl) return null;
+            const arr = dataurl.split(',');
+            const mime = arr[0].match(/:(.*?);/)[1];
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) { u8arr[n] = bstr.charCodeAt(n); }
+            return new Blob([u8arr], { type: mime });
+        };
+
+// --- 1. 萊恩專屬：產生合約 HTML (修正標題 + 補全乙方資訊) ---
+        const generateContractHtml = (data, signatureUrl) => {
+            // 萊恩配色
+            const BRAND_NAVY = "#1B365D"; 
+            const BRAND_GOLD = "#C5A065";
+            const BRAND_RED = "#EF4444";
+            const BG_LIGHT = "#F5F5F7";
+            
+            const isBoarding = data.service_type === 'boarding' || (data.room_type && data.room_type !== '');
+            
+            // 輔助顯示
+            const show = (val) => val || '<span style="color:#ccc;">未填寫</span>';
+            const arr = (val) => Array.isArray(val) && val.length > 0 ? val.join('、') : '無';
+
+            // 樣式定義
+            const labelStyle = "font-size: 11px; color: #888; font-weight: bold; display: block; margin-bottom: 3px; letter-spacing: 0.5px;";
+            const valueStyle = `font-size: 14px; color: ${BRAND_NAVY}; font-weight: 500;`;
+
+            // --- 條款內容 (完整版) ---
+            const groomingTerms = `
+                <div style="font-weight:bold; color:${BRAND_NAVY}; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:5px;">美容服務 簽署聲明與法律約定</div>
+                <ol style="padding-left: 20px; margin: 0; line-height: 1.8;">
+                    <li><strong>第一條(契約目的)：</strong>本服務為犬貓美容，<span style="color:${BRAND_RED}; font-weight:bold; text-decoration:underline;">不涉及醫療行為</span>。</li>
+                    <li><strong>第五條(健康告知)：</strong>甲方應<span style="font-weight:bold; text-decoration:underline;">誠實告知</span>寵物病史與是否具有攻擊性。若因隱瞞導致意外，<span style="color:${BRAND_RED}; font-weight:bold;">乙方不負責損害賠償責任</span>；因隱瞞導致乙方人員傷亡、財損等損失，<span style="color:${BRAND_RED}; font-weight:bold; text-decoration:underline;">乙方將全額向甲方求償</span>。</li>
+                    <li><strong>第九條(退費規定)：</strong>包月服務終止時，預收總額扣除(<span style="font-weight:bold; color:${BRAND_NAVY};">已使用次數 X 單次原價</span>)後退費。</li>
+                    <li><strong>第十二條(逾時接回)：</strong>若於約定時間內未領回，<span style="color:${BRAND_RED}; font-weight:bold;">加收安親費</span>；打烊時仍未接回，則<span style="color:${BRAND_RED}; font-weight:bold;">視同住宿一晚計費</span>。如經通知三日內未領回，將依照<span style="font-weight:bold; text-decoration:underline;">動保法第29條</span>移交主管機關。</li>
+                    <li><strong>第十五條(履約保障)：</strong>預收費用累積金額新台幣一萬元以下，依法免提供履約保障。</li>
+                    <li>其餘細節將依照行政院農委會定型化契約範本辦理。</li>
+                    <li>因本契約所產生之訴訟，雙方合意將以<span style="font-weight:bold;">桃園地方法院</span>為第一審管轄法院。</li>
+                </ol>
+            `;
+            
+            const boardingTerms = `
+                <div style="font-weight:bold; color:${BRAND_NAVY}; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:5px;">住宿/安親 簽署聲明與法律約定</div>
+                <ol style="padding-left: 20px; margin: 0; line-height: 1.8;">
+                    <li>
+                        <strong>住宿計費與進退房：</strong>本館住宿服務以「晚」為計算單位。辦理入住時間為 10:00 至 18:00，退房時間應於 18:00 前。
+                        <div style="margin-top:5px; padding:10px; background-color:#f9f9f9; border-radius:8px; border:1px solid #eee; font-size:11px;">
+                            <p style="margin:0 0 5px 0; color:${BRAND_NAVY}; font-weight:bold; text-decoration:underline;">逾時費用規定：</p>
+                            <p style="margin:0;">• 凡於 18:00 至 19:00 間接回者，將依本館公告加收「安親費用」。</p>
+                            <p style="margin:0;">• 凡超過每日打烊時間 19:00 仍未接回者，不論原服務項目為何，均視同於本旅館「住宿一晚」，並依現場公告之住宿費率計費。</p>
+                        </div>
+                    </li>
+                    <li>住宿期間請<span style="font-weight:bold; text-decoration:underline;">自備飼料</span>。若無自備而由店內提供，導致換食腸胃不適（如軟便、腹瀉），<span style="color:${BRAND_RED}; font-weight:bold;">旅館恕不負責賠償</span>。</li>
+                    <li>入住當日需完成本館<span style="font-weight:bold; text-decoration:underline;">美容部洗護</span>（費用另計）。若發現寄生蟲，將<span style="color:${BRAND_RED}; font-weight:bold;">額外收取除蟲及環境清潔費</span>。</li>
+                    <li>請提供<span style="font-weight:bold; text-decoration:underline;">身分證件影本</span>及毛孩預防針手冊備查。</li>
+                    <li>逾期三日聯繫不上飼主，將依<span style="font-weight:bold; text-decoration:underline;">動保法</span>交付動保處，衍生費用由<span style="color:${BRAND_RED}; font-weight:bold; text-decoration:underline;">飼主全額支付</span>。</li>
+                    <li>若隱瞞攻擊行為導致傷亡或財損，<span style="color:${BRAND_RED}; font-weight:bold;">本館有權向飼主全額求償</span>。</li>
+                    <li>若寵物持續吠叫影響營運或安寧，本館將聯繫飼主或緊急聯絡人<span style="color:${BRAND_RED}; font-weight:bold; text-decoration:underline;">先行帶回</span>。</li>
+                    <li>突發疾病須送醫時，相關<span style="color:${BRAND_RED}; font-weight:bold; text-decoration:underline;">醫療及交通費用由飼主全額負擔</span>。</li>
+                    <li>隱瞞病況或本身具有高風險疾病（心臟病、癲癇等），若發生意外或死亡，經判定本館無疏失，<span style="color:${BRAND_RED}; font-weight:bold;">本館不負責賠償責任</span>。</li>
+                    <li>若因人為疏失導致走失、傷亡，本館依法賠償，<span style="color:${BRAND_RED}; font-weight:bold; text-decoration:underline;">賠償上限為新台幣 30,000 元整</span>（玩耍小傷痕除外）。</li>
+                    <li>若店內物品（攝影機、房間隔間等）遭到破壞，<span style="color:${BRAND_RED}; font-weight:bold; text-decoration:underline;">本館有權向飼主全額求償</span>。</li>
+                    <li>寵物若因年老或舊疾死亡，請於 24 小時內領回。若需鑑定死因請於 24 小時內會同辦理，<span style="font-weight:bold; text-decoration:underline;">逾期不得異議</span>。</li>
+                    <li>散步時若因寵物掙脫牽繩導致逃跑或傷亡，<span style="color:${BRAND_RED}; font-weight:bold;">本館不負責相關賠償事宜</span>。</li>
+                    <li>其餘細節將依照行政院農委會定型化契約範本辦理。</li>
+                    <li>本同意書一式兩份，由飼主與本館各執乙份。因本契約所產生之訴訟，雙方合意將以桃園地方法院為第一審管轄法院。</li>
+                </ol>
+                <div style="background-color: #FFF5F5; padding: 10px; border: 1px solid ${BRAND_RED}; border-radius: 8px; margin-top: 15px; font-weight: bold; color: ${BRAND_RED}; font-size: 11px;">
+                    非24小時照護聲明：本人知悉本店無夜間駐店人員。若寵物於夜間無人時段發生突發狀況，店家可能無法即時發現或處置，本人願意承擔此風險。
+                </div>
+            `;
+            
+            const highRiskTerms = `
+                <div style="border: 2px dashed ${BRAND_RED}; padding: 10px; margin-top: 15px; border-radius: 8px;">
+                    <h4 style="margin: 0 0 5px 0; color: ${BRAND_RED};">⚠️ 高風險服務同意書</h4>
+                    <p style="font-size:11px; margin:0; line-height:1.6;">
+                        本人確認已誠實告知寵物病史(心臟病、癲癇、年老等)。知悉服務過程中可能因緊張誘發休克或意外。若非乙方故意過失，乙方不負損害賠償責任。如發生緊急狀況，同意乙方優先送往指定醫院處置。
+                        <br><br>
+                        <strong>特別聲明：</strong>美容洗澡或住宿期間，因基因或本身遺傳問題造成的疾病，或寵物因天生病史、高齡、幼犬貓，因寵物持有人遺漏、隱瞞，或已知風險、仍然堅持美容或住宿，途中若有意外休克或其他等狀況，本店會立即送至附近動物醫院救治，費用由飼主負擔。
+                    </p>
+                </div>
+            `;
+
+            // 判斷是否顯示高風險條款
+            const showHighRisk = (data.medical_history === '有') || 
+                               (data.age_type === 'year' && parseFloat(data.age_value) >= 8) || 
+                               (data.age_type === 'month' && parseFloat(data.age_value) <= 3);
+
+            return `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>萊恩寵物沙龍 - 服務契約副本</title>
+                    <style>
+                        @media only screen and (max-width: 600px) {
+                            .main-container { width: 100% !important; margin: 0 !important; border-radius: 0 !important; }
+                            .section-padding { padding: 20px 15px !important; }
+                            .responsive-table tr, .responsive-table td { display: block !important; width: 100% !important; box-sizing: border-box; }
+                            .responsive-table td { border-bottom: 1px solid #eee; padding: 10px 0 !important; }
+                            .summary-table td { display: block !important; width: 100% !important; text-align: left !important; }
+                        }
+                    </style>
+                </head>
+                <body style="font-family: sans-serif; line-height: 1.6; color: ${BRAND_NAVY}; background-color: #f4f4f4; margin: 0; padding: 20px;">
+                    <div class="main-container" style="max-width: 800px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+                        <div style="background-color: ${BRAND_NAVY}; padding: 30px; text-align: center; color: #fff;">
+                            <h1 style="margin: 0; font-size: 24px; color: ${BRAND_GOLD}; letter-spacing: 2px;">LION PET 萊恩寵物</h1>
+                            <p style="margin: 5px 0 0; font-size: 12px; opacity: 0.8;">服務契約書副本</p>
+                        </div>
+                        <div class="section-padding" style="padding: 30px;">
+                            
+                            <div style="background-color: ${BG_LIGHT}; border: 1px solid ${BRAND_GOLD}; border-radius: 12px; padding: 20px; margin-bottom: 30px;">
+                                <table class="summary-table" width="100%" cellpadding="5">
+                                    <tr>
+                                        <td width="50%"><span style="${labelStyle}">契約編號</span><span style="${valueStyle}">${Date.now().toString().slice(-8)}</span></td>
+                                        <td width="50%"><span style="${labelStyle}">簽署日期</span><span style="${valueStyle}">${data.signature_time}</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span style="${labelStyle}">服務類別</span><span style="${valueStyle}">${isBoarding ? '🏠 住宿/安親' : '✂️ 美容/SPA'}</span></td>
+                                        <td>
+                                            <span style="${labelStyle}">應付總額</span> <span style="font-size: 18px; color: ${BRAND_RED}; font-weight: bold;">$${data.total_amount || 0}</span>
+                                        </td>
+                                    </tr>
+                                    ${isBoarding ? `<tr><td><span style="${labelStyle}">入住日期</span><span style="${valueStyle}">${show(data.check_in_date || data.checkInDate)}</span></td><td><span style="${labelStyle}">退房日期</span><span style="${valueStyle}">${show(data.check_out_date || data.checkOutDate)}</span></td></tr>` : ''}
+                                </table>
+                            </div>
+
+                            <h3 style="border-bottom: 2px solid ${BRAND_GOLD}; padding-bottom: 5px; color: ${BRAND_NAVY}; margin-top: 0;">👤 甲方 (飼主資料)</h3>
+                            <table class="responsive-table" width="100%" cellpadding="8" style="font-size: 13px; border-collapse: collapse; margin-bottom: 20px;">
+                                <tr style="background:#f8f9fa;">
+                                    <td width="50%">
+                                        <span style="${labelStyle}">飼主姓名</span>
+                                        <span style="${valueStyle}">${show(data.owner_name)} <span style="font-size:12px; color:#666;">(${ (data.is_owner === '是' || data.is_owner === true) ? '本人' : '非本人' })</span></span>
+                                    </td>
+                                    <td width="50%">
+                                        <span style="${labelStyle}">連絡電話</span>
+                                        <span style="${valueStyle}">${show(data.phone)}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <span style="${labelStyle}">電子信箱</span>
+                                        <span style="${valueStyle}">${show(data.email)}</span>
+                                    </td>
+                                    <td>
+                                        <span style="${labelStyle}">身分證字號</span>
+                                        <span style="${valueStyle}">${show(data.owner_id)}</span>
+                                    </td>
+                                </tr>
+                                <tr style="background:#f8f9fa;">
+                                    <td colspan="2">
+                                        <span style="${labelStyle}">通訊地址</span>
+                                        <span style="${valueStyle}">${show(data.address)}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <span style="${labelStyle}">緊急聯絡人</span>
+                                        <span style="${valueStyle}">${show(data.emergency_name)}</span>
+                                    </td>
+                                    <td>
+                                        <span style="${labelStyle}">緊急聯絡電話</span>
+                                        <span style="${valueStyle}">${show(data.emergency_phone)}</span>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <h3 style="border-bottom: 2px solid ${BRAND_GOLD}; padding-bottom: 5px; color: ${BRAND_NAVY};">🐾 寵物資料</h3>
+                            <table class="responsive-table" width="100%" cellpadding="8" style="font-size: 13px; border-collapse: collapse; margin-bottom: 20px;">
+                                <tr style="background:#f8f9fa;">
+                                    <td width="50%">
+                                        <span style="${labelStyle}">名字 / 品種</span>
+                                        <span style="${valueStyle}">${show(data.pet_name)} <span style="font-size:12px; color:#666;">(${data.pet_type==='cat'?'貓':'狗'} / ${show(data.breed)})</span></span>
+                                    </td>
+                                    <td width="50%">
+                                        <span style="${labelStyle}">基本資料 (性別/年齡/體重)</span>
+                                        <span style="${valueStyle}">${data.sex} / ${data.age_value}${data.age_type==='year'?'歲':'個月'} / ${data.weight}kg</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        <span style="${labelStyle}">健康狀況 (結紮/驅蟲/晶片/病史)</span>
+                                        <span style="${valueStyle}">
+                                            結紮:${data.fix} / 驅蟲:${data.deworming_monthly} / 晶片:${data.chip_status} ${data.chip_id ? `(${data.chip_id})` : ''}<br>
+                                            <span style="color:${data.medical_history==='有'?BRAND_RED:'inherit'}">病史: ${data.medical_history} ${data.medical_history==='有' ? `(${arr(data.medical_tags)} ${data.medical_other})` : ''}</span>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr style="background:#f8f9fa;">
+                                    <td colspan="2">
+                                        <span style="${labelStyle}">個性與外觀</span>
+                                        <span style="${valueStyle}">
+                                            個性: ${arr(data.social_traits)} ${data.personality_other} <br>
+                                            外觀: ${arr(data.physical_check)} ${data.physical_other}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        <span style="${labelStyle}">指定醫院</span>
+                                        <span style="${valueStyle}">${data.preferred_clinic_name || '無'} (電話: ${data.preferred_clinic_phone || '-'})</span>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <h3 style="border-bottom: 2px solid ${BRAND_GOLD}; padding-bottom: 5px; color: ${BRAND_NAVY};">💰 消費明細</h3>
+                            <table class="responsive-table" width="100%" cellpadding="8" style="font-size: 13px; border-collapse: collapse; margin-bottom: 20px;">
+                                <tr style="background:#f8f9fa;">
+                                    <td width="100%" colspan="2">
+                                        <span style="${labelStyle}">服務項目</span>
+                                        <span style="${valueStyle}">
+                                            ${isBoarding ? '住宿' + (Array.isArray(data.service_tags) && data.service_tags.length > 0 ? '、' + data.service_tags.join('、') : '') : arr(data.service_tags)}
+                                        </span>
+                                    </td>
+                                </tr>
+                                ${isBoarding ? `<tr><td colspan="2"><span style="${labelStyle}">房型 / 放風</span><span style="${valueStyle}">${data.room_type} ($${data.room_price}/晚) / ${data.temperament}</span></td></tr>` : ''}
+                                <tr>
+                                    <td width="50%">
+                                        <span style="${labelStyle}">付款方式</span>
+                                        <span style="${valueStyle}">${data.payment_method}</span>
+                                    </td>
+                                    <td width="50%">
+                                        <span style="${labelStyle}">${isBoarding ? '付款明細' : '總計金額'}</span>
+                                        <span style="${valueStyle}">
+                                            ${isBoarding ? `訂金：$${data.deposit||0} / 尾款：$${data.balance||0}` : `<strong style="color:${BRAND_RED}">$${data.total_amount||0}</strong>`}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr style="background:#f8f9fa;">
+                                    <td colspan="2">
+                                        <span style="${labelStyle}">備註</span>
+                                        <span style="${valueStyle} color:${BRAND_RED};">${data.note || '無'}</span>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <div style="font-size: 11px; color: #666; background: #fff; border: 1px solid #eee; padding: 15px; border-radius: 8px;">
+                                ${data.legal_agree ? groomingTerms : ''}
+                                ${isBoarding ? '<hr style="border:0; border-top:1px dashed #ccc; margin:15px 0;">' + boardingTerms : ''}
+                                ${showHighRisk ? highRiskTerms : ''}
+                                <p style="color:${BRAND_GOLD}; font-weight:bold; margin-top:10px;">本人已詳閱並同意以上所有內容。</p>
+                            </div>
+
+                            <h3 style="border-bottom: 2px solid ${BRAND_GOLD}; padding-bottom: 5px; color: ${BRAND_NAVY}; margin-top: 20px;">乙方 (店家資訊)</h3>
+                            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee; font-size: 13px; color: #555;">
+                                <table width="100%" cellpadding="4" style="border-collapse: collapse;">
+                                    <tr><td width="20%" style="font-weight:bold; color:${BRAND_NAVY};">名稱</td><td>佳晟寵物美容旅館</td></tr>
+                                    <tr><td style="font-weight:bold; color:${BRAND_NAVY};">負責人</td><td>顏睿諺</td></tr>
+                                    <tr><td style="font-weight:bold; color:${BRAND_NAVY};">電話</td><td>03-360-8693</td></tr>
+                                    <tr><td style="font-weight:bold; color:${BRAND_NAVY};">地址</td><td>桃園市桃園區民族路199-2號</td></tr>
+                                    <tr><td style="font-weight:bold; color:${BRAND_NAVY};">許可證號</td><td>特寵業字第 C1130686 號</td></tr>
+                                    <tr><td style="font-weight:bold; color:${BRAND_NAVY};">指定醫院</td><td>安欣動物醫院 (03-333-6775)</td></tr>
+                                </table>
+                            </div>
+
+                            <div style="margin-top: 40px; text-align: center; border-top: 2px dashed #ccc; padding-top: 25px;">
+                                <div style="font-size: 14px; font-weight: bold; margin-bottom: 15px; color: ${BRAND_NAVY};">甲方 (客戶) 簽署確認</div>
+                                <img src="${signatureUrl}" style="max-height: 80px; max-width: 100%; border-bottom: 1px solid #000;" />
+                                <div style="font-size: 11px; color: #999; margin-top: 10px;">簽署時間：${data.signature_time}</div>
+                            </div>
+                        </div>
+                        <div style="background-color: ${BRAND_NAVY}; color: rgba(255,255,255,0.4); text-align: center; padding: 15px; font-size: 10px;">
+                            © 2026 萊恩寵物沙龍精品旅館 | 桃園市桃園區民族路199-2號
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `;
+        };
+
+        // --- 2. 成功畫面 (包含開啟完整契約) ---
+        const SuccessView = ({ data, onReset }) => {
+            const hasEmail = data.email && data.email.trim() !== '';
+            
+            const openFullContract = () => {
+                const newWindow = window.open('', '_blank');
+                if (newWindow) {
+                    newWindow.document.write(data.htmlContent);
+                    newWindow.document.close();
+                } else {
+                    alert('請允許彈出視窗以查看完整契約。');
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 z-[200] bg-lion-navy/95 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
+                    <div className="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl relative overflow-hidden my-auto">
+                        <div className={`p-8 text-center relative overflow-hidden transition-colors duration-500 ${hasEmail ? 'bg-lion-navy' : 'bg-lion-gold'}`}>
+                            <div className="absolute top-[-50px] left-[-50px] w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                            <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 text-white shadow-lg animate-pulse-slow">
+                                <Icon name={hasEmail ? "check" : "camera"} size={48} />
+                            </div>
+                            <h2 className="text-2xl font-serif font-bold text-white mb-2 tracking-wide">{hasEmail ? '預約成功！' : '預約成功！請截圖'}</h2>
+                            <p className="text-white/80 text-sm font-bold">{hasEmail ? '契約副本已寄至您的信箱' : '未填寫信箱，請務必保存下方副本'}</p>
+                        </div>
+                        <div className="p-6 md:p-8 space-y-6">
+                            <div className={`border rounded-2xl p-5 flex gap-4 items-start shadow-sm ${hasEmail ? 'bg-slate-50 border-slate-100' : 'bg-red-50 border-red-100'}`}>
+                                <div className={`shrink-0 mt-1 ${hasEmail ? 'text-lion-navy' : 'text-red-500'}`}><Icon name={hasEmail ? "info" : "alert-triangle"} size={20} /></div>
+                                <div className="text-sm">
+                                    <p className={`font-bold mb-1 text-base ${hasEmail ? 'text-lion-navy' : 'text-red-500'}`}>{hasEmail ? '💡 溫馨提醒' : '⚠️ 重要提醒'}</p>
+                                    <p className="leading-relaxed opacity-80 text-slate-600">{hasEmail ? '若沒收到信件，可能是被歸類到垃圾郵件。您也可以點擊下方按鈕直接查看契約副本。' : '因未填寫 Email，系統無法發送副本。請點擊下方按鈕開啟完整契約，並進行全螢幕截圖保存。'}</p>
+                                </div>
+                            </div>
+                            <div className="space-y-3">
+                                <button onClick={openFullContract} className="w-full py-4 rounded-2xl bg-lion-navy text-white font-bold shadow-lg shadow-lion-navy/20 hover:bg-[#2A4B7C] active:scale-95 transition-all flex items-center justify-center gap-2 border-2 border-lion-navy"><Icon name="file-text" size={20} /> 開啟完整契約頁面 (截圖用)</button>
+                                <button onClick={onReset} className="w-full py-4 rounded-2xl bg-white text-lion-navy border-2 border-slate-200 font-bold shadow-sm hover:bg-slate-50 active:scale-95 transition-all flex items-center justify-center gap-2"><Icon name="home" size={20} /> 返回首頁 (完成)</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
 
         const App = () => {
     // --- 驗證規則配置 ---
@@ -547,7 +864,8 @@ const validateField = (name, value) => {
 
     // --- 表單驗證 Hook ---
     const [errors, setErrors] = useState({});
-    
+    // --- 2. 新增提交狀態 ---
+            const [submittedData, setSubmittedData] = useState(null);
 const validate = () => {
     const newErrors = {};
     let hasError = false;
@@ -563,12 +881,11 @@ const validate = () => {
 
     // 檢查住宿專用欄位
     if (view === 'boarding') {
-        if (!formData.checkInDate) {
-            newErrors.checkInDate = '請選擇入住日期';
-            hasError = true;
-        }
-        if (!formData.checkOutDate) {
+if (!formData.checkOutDate) {
             newErrors.checkOutDate = '請選擇退房日期';
+            hasError = true;
+        } else if (formData.checkInDate && new Date(formData.checkOutDate) < new Date(formData.checkInDate)) {
+            newErrors.checkOutDate = '退房日期不可早於入住日期';
             hasError = true;
         }
         if (!formData.room_type) {
@@ -713,6 +1030,18 @@ const [historyRecords, setHistoryRecords] = useState([]);
                 
                 return false;
             };
+// --- 新增：自動計算尾款 ---
+            useEffect(() => {
+                if (view === 'boarding') {
+                    const total = parseFloat(formData.total_amount) || 0;
+                    const deposit = parseFloat(formData.deposit) || 0;
+                    const balance = total - deposit;
+                    // 只有數值變動時才更新，避免無窮迴圈
+                    if (formData.balance !== balance) {
+                        setFormData(prev => ({ ...prev, balance }));
+                    }
+                }
+            }, [formData.total_amount, formData.deposit, view]);
 
             const isHighRisk = useMemo(() => checkHighRisk(formData), [formData]);
 
@@ -850,73 +1179,32 @@ const safeParse = (value) => {
 // --- 新增：帶入舊資料邏輯 ---
 const handleApplyHistory = (record) => {
     const oldData = record;
-
-    // --- 處理疫苗照片邏輯 ---
-    let savedVaccinePhoto = null;
-    if (oldData.vaccine === '有') {
-        if (record.vaccine_url) {
-            savedVaccinePhoto = record.vaccine_url;
-        } else if (oldData.vaccine_file && oldData.vaccine_file.startsWith('http')) {
-            savedVaccinePhoto = oldData.vaccine_file;
-        }
-    }
-
-    // --- 解構舊資料 ---
     const { 
-        checkInDate, checkOutDate, 
+        check_in_date, check_out_date, // 從資料庫取出底線格式的日期
         service_tags, 
-        signature, signature_time, legal_agree, 
-        vaccine_file,
-        // 排除金額相關欄位
-        total_amount,
-        payment_method,
-        deposit,
-        balance,
+        is_owner,
         ...reusableData 
     } = oldData;
 
-    // --- 更新表單資料 ---
     setFormData(prev => ({
-        ...prev,            // 保留目前表單的狀態 (例如已選好的服務類別)
-        ...reusableData,    // 覆蓋舊客的資料 (姓名、電話、品種、個性...)
-        phone: formData.phone, // 確保電話是剛剛搜尋的那支
-        
-        // 👇 關鍵修改：使用 safeParse 處理這兩個欄位，避免報錯
-        physical_check: safeParse(record.physical_check),
-        social_traits: safeParse(record.social_traits),
-        
-        // 👇 處理其他陣列欄位
-        medical_tags: safeParse(reusableData.medical_tags),
-        
-        service_tags: [], // 👈 這裡強制清空，不要帶入舊的服務項目
-        
-        weight: reusableData.weight || '',
-        age_value: reusableData.age_value || '',
-        age_type: reusableData.age_type || 'year',
-        preferred_clinic_name: reusableData.preferred_clinic_name || '',
-        preferred_clinic_phone: reusableData.preferred_clinic_phone || '',
-        deworming_monthly: reusableData.deworming_monthly || '',
-        vaccine_file: savedVaccinePhoto, // 設定疫苗照片
-        
-        // 👇 關鍵修改：確保金額欄位為空
+        ...prev,
+        ...reusableData,
+        phone: formData.phone,
+        // 👇 關鍵修復：將資料庫日期填入前端用的 camelCase 變數
+        checkInDate: check_in_date || '', 
+        checkOutDate: check_out_date || '',
+        // 👇 關鍵修復：確保本人/非本人邏輯正確 (轉為字串 '是')
+        is_owner: (is_owner === '是' || is_owner === true) ? '是' : '否',
+        service_tags: [], 
         total_amount: '',
         payment_method: '',
         deposit: '',
         balance: ''
     }));
-
     setRealtimeSig(null);
     setShowHistoryModal(false);
-    
-    // --- 提示訊息：判斷來源是住宿還是美容 ---
-    const isSourceBoarding = oldData.service_type === 'boarding';
-    if (view === 'boarding' && !isSourceBoarding) {
-        window.showToast(`✅ 已帶入 ${oldData.pet_name} 資料 (提醒: 此為美容紀錄，請補填住宿專用欄位)`, "success");
-    } else {
-        window.showToast(`✅ 已帶入 ${oldData.pet_name} 的過往資料`, "success");
-    }
+    window.showToast(`✅ 已載入 ${oldData.pet_name} 的歷史資料`, "success");
 };
-
 
 // 輔助：判斷空值
     const isEmpty = (val) => {
@@ -928,14 +1216,138 @@ const handleApplyHistory = (record) => {
     // 錯誤欄位清單 (收集中文名稱)
     const missingFields = [];
 
-    const handleSubmit = async () => {
-        if (!validate()) return;
-        setIsSubmitting(true);
-        await mockSubmit(formData, view);
-        setIsSubmitting(false);
-        setShowSuccess(true);
-    };
+// --- 3. 核心提交邏輯 (完整版 - 防連點優化) ---
+            const handleSubmit = async () => {
+                // 0. 防重複點擊檢查：如果正在提交中，直接返回
+                if (isSubmitting) return;
 
+                // 1. 表單驗證
+                if (!validate()) return;
+
+                // 2. 鎖定按鈕並顯示提示
+                setIsSubmitting(true);
+                window.showToast('正在處理簽名與提交...', 'warning');
+
+                try {
+                    // --- A. 上傳簽名檔 ---
+                    let signatureUrl = null;
+                    if (formData.signature) {
+                        const blob = dataURLtoBlob(formData.signature);
+                        const fileName = `sig_${Date.now()}.jpg`;
+                        
+                        // 上傳到 Supabase Storage 'signatures'
+                        const { error: uploadError } = await supabaseClient.storage
+                            .from('signatures')
+                            .upload(fileName, blob, { contentType: 'image/jpeg' });
+                        
+                        if (uploadError) throw new Error('簽名檔上傳失敗: ' + uploadError.message);
+                        
+                        // 取得公開網址
+                        const { data: publicData } = supabaseClient.storage
+                            .from('signatures')
+                            .getPublicUrl(fileName);
+                        signatureUrl = publicData.publicUrl;
+                    }
+
+                    // --- B. 準備寫入資料庫的 payload ---
+                    const payload = {
+                        service_type: view === 'boarding' ? 'boarding' : 'grooming',
+                        owner_name: formData.owner_name,
+                        phone: formData.phone,
+                        email: formData.email,
+                        owner_id: formData.owner_id,
+                        address: formData.address,
+                        emergency_name: formData.emergency_name,
+                        emergency_phone: formData.emergency_phone,
+                        pet_name: formData.pet_name,
+                        pet_type: formData.pet_type,
+                        breed: formData.breed,
+                        weight: parseFloat(formData.weight) || 0,
+                        age_type: formData.age_type,
+                        age_value: formData.age_value,
+                        sex: formData.sex,
+                        fix: formData.fix,
+                        chip_status: formData.chip_status,
+                        chip_id: formData.chip_id,
+                        health_date: formData.health_date || null,
+                        deworming_monthly: formData.deworming_monthly,
+                        physical_check: JSON.stringify(formData.physical_check),
+                        physical_other: formData.physical_other,
+                        social_traits: JSON.stringify(formData.social_traits),
+                        personality_other: formData.personality_other,
+                        medical_history: formData.medical_history,
+                        medical_tags: JSON.stringify(formData.medical_tags),
+                        medical_other: formData.medical_other,
+                        preferred_clinic_name: formData.preferred_clinic_name,
+                        preferred_clinic_phone: formData.preferred_clinic_phone,
+                        check_in_date: formData.checkInDate || null,
+                        check_out_date: formData.checkOutDate || null,
+                        room_type: formData.room_type,
+                        room_price: parseFloat(formData.room_price) || 0,
+                        temperament: formData.temperament,
+                        service_tags: JSON.stringify(formData.service_tags),
+                        note: formData.note,
+                        total_amount: parseFloat(formData.total_amount) || 0,
+                        payment_method: formData.payment_method,
+                        deposit: parseFloat(formData.deposit) || 0,
+                        balance: parseFloat(formData.balance) || 0,
+                        signature: signatureUrl,
+                        signature_time: formData.signature_time,
+                        legal_agree: formData.legal_agree,
+                        status: 'pending'
+                    };
+
+                    // --- C. 寫入 bookings 資料表 ---
+                    const { error: dbError } = await supabaseClient
+                        .from('bookings')
+                        .insert([payload]);
+
+                    if (dbError) throw dbError;
+
+                    // --- D. 更新 customers 資料表 (Upsert) ---
+                    const customerData = {
+                        phone: formData.phone,
+                        owner_name: formData.owner_name,
+                        owner_id: formData.owner_id,
+                        email: formData.email,
+                        address: formData.address,
+                        emergency_name: formData.emergency_name,
+                        emergency_phone: formData.emergency_phone,
+                        updated_at: new Date().toISOString()
+                    };
+                    await supabaseClient.from('customers').upsert(customerData, { onConflict: 'phone' });
+
+                    // --- E. 產生 HTML 並嘗試寄信 ---
+                    const completeData = { ...payload, view: view };
+                    const emailBody = generateContractHtml(completeData, signatureUrl);
+
+                    if (formData.email && formData.email.trim() !== '') {
+                        try {
+                            await supabaseClient.functions.invoke('resend-email', {
+                                body: {
+                                    email: formData.email,
+                                    owner_name: formData.owner_name,
+                                    pet_name: formData.pet_name,
+                                    htmlContent: emailBody
+                                }
+                            });
+                            console.log('寄信請求已發送');
+                        } catch (mailError) {
+                            console.error('寄信失敗 (不影響訂單成立):', mailError);
+                        }
+                    }
+
+                    // --- F. 設定成功狀態 (不解除鎖定，直接跳轉) ---
+                    setSubmittedData({ ...completeData, htmlContent: emailBody });
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                } catch (error) {
+                    console.error('提交失敗:', error);
+                    window.showToast('發生錯誤：' + (error.message || '提交失敗'), 'error');
+                    // 只有發生錯誤時才解鎖按鈕，讓用戶可以重試
+                    setIsSubmitting(false);
+                }
+            };
 
             useEffect(() => {
                 let timer;
@@ -983,19 +1395,52 @@ const handleApplyHistory = (record) => {
                 };
             }, [showFullSig]);
 
-            const saveSignature = () => {
+const saveSignature = () => {
                 if (padInstance.current && !padInstance.current.isEmpty()) {
-                    setRealtimeSig(padInstance.current.toDataURL());
+                    // 修改重點：使用 'image/jpeg' 並設定品質為 0.5 (壓縮 50%)
+                    const compressedSig = padInstance.current.toDataURL("image/jpeg", 0.5);
+                    
+                    setRealtimeSig(compressedSig);
+                    
                     const now = new Date();
                     const timeStr = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
-                    handleChange('signature', padInstance.current.toDataURL());
+                    
+                    handleChange('signature', compressedSig);
                     handleChange('signature_time', timeStr);
                     setShowFullSig(false);
                 } else {
-window.showToast('請先簽名');
+                    window.showToast('請先簽名');
                 }
             };
-
+            
+// --- 4. 成功畫面攔截 ---
+            if (submittedData) {
+                return (
+                    <SuccessView 
+                        data={submittedData} 
+                        onReset={() => {
+                            // 重置所有狀態回到首頁
+                            setSubmittedData(null);
+                            setFormData({
+                                lineAdded: false, email: '', owner_name: '', is_owner: '是', phone: '', owner_id: '', address: '',
+                                emergency_name: '', emergency_phone: '', preferred_clinic_name: '', preferred_clinic_phone: '',
+                                pet_name: '', breed: '', weight: '', age_type: 'year', age_value: '',
+                                pet_type: 'dog', sex: '', fix: '', chip_status: '', chip_id: '',
+                                health_date: '', deworming_monthly: '', physical_check: [], physical_other: '', 
+                                social_traits: [], personality_other: '', medical_history: '無', medical_tags: [], medical_other: '',
+                                vet_name: '', vet_phone: '', service_tags: [], room_type: '', room_price: '', checkInDate: '', checkOutDate: '',
+                                is_barking: '', has_boarding_exp: '', is_food_aggressive: '', use_peepad: '',
+                                vaccine_status: '', deworming_status: '', cage_training: '', temperament: '',
+                                food_allergy: '', personality_note: '', special_note: '', additional_notes: '',
+                                total_amount: '', payment_method: '', deposit: '', balance: '',
+                                signature: null, signature_time: '', legal_agree: false, service_type: ''
+                            });
+                            setView('home');
+                            window.scrollTo(0, 0);
+                        }} 
+                    />
+                );
+            }
 if (view === 'home') {
     return (
         <>
@@ -1645,7 +2090,26 @@ return (
     {errors.signature && <div className="text-xs text-red-500 font-bold mt-1">{errors.signature}</div>}
 </div>
 
-                            <button onClick={handleSubmit} disabled={isSubmitting} className="w-full py-5 bg-gradient-to-r from-lion-navy to-[#2A4B7C] text-white rounded-2xl font-bold text-lg shadow-xl shadow-lion-navy/30 active:scale-95 transition-all flex items-center justify-center gap-3 hover:shadow-2xl disabled:opacity-70 disabled:cursor-not-allowed transform hover:-translate-y-1">{isSubmitting ? '資料提交中...' : '確認並提交預約單'} <Icon name="send" size={20}/></button>
+<button 
+                                onClick={handleSubmit} 
+                                disabled={isSubmitting} 
+                                className={`w-full py-5 rounded-2xl font-bold text-lg shadow-xl transition-all flex items-center justify-center gap-3 ${
+                                    isSubmitting 
+                                    ? 'bg-gray-400 cursor-not-allowed text-white' 
+                                    : 'bg-gradient-to-r from-lion-navy to-[#2A4B7C] text-white shadow-lion-navy/30 hover:shadow-2xl active:scale-95 hover:-translate-y-1'
+                                }`}
+                            >
+                                {isSubmitting ? (
+                                    <>
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                        <span>系統處理中，請稍候...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        確認並提交預約單 <Icon name="send" size={20}/>
+                                    </>
+                                )}
+                            </button>
                         </section>
                     </main>
 
