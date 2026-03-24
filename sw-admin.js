@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lion-admin-cache-v1';
+const CACHE_NAME = 'lion-admin-cache-v2';
 const ASSETS_TO_CACHE = [
     '/admin.html',
     '/logo.png',

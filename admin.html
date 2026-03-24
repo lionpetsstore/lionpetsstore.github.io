@@ -983,13 +983,6 @@ if (Array.isArray(rawTags)) {
         return `${mainType} • ${tagsText}`;
     })()}
 </div>
-{/* 修改：列表同時顯示總額、訂金與尾款 (僅住宿單) */}
-<div className="flex flex-col items-end">
-    <div className="text-[10px] text-gray-400 font-bold">總額 ${b.total_amount||0}</div>
-    <div className="text-sm font-black text-lion-gold">
-        {b.service_type === 'boarding' ? `訂:${b.deposit||0} / 尾:${b.balance||0}` : `$${b.total_amount||0}`}
-    </div>
-</div>
                                                         <Icon name="chevron-right" className="text-gray-300"/>
                                                     </div>
                                                 </div>
@@ -1114,71 +1107,21 @@ if (Array.isArray(rawTags)) {
                                             </div>
                                         </Section>
 
-<Section title="消費明細" icon="credit-card">
-    <div className="bg-lion-gold/10 p-4 rounded-xl border border-lion-gold/30 mb-4">
-        <div className="flex justify-between items-start mb-4">
-            <div className="flex-1">
-                <div className="text-xs font-bold text-lion-gold uppercase tracking-wider mb-1">Total Amount</div>
-                <DetailRow 
-                    label="總金額" 
-                    field="total_amount" 
-                    form={editForm} 
-                    setForm={setEditForm} 
-                    editing={isEditing} 
-                    val={selected.total_amount} 
-                    type="number" 
-                    isPrice={true} 
-                    userRole={userRole}
-                />
-            </div>
-            <div className="text-xs font-bold text-lion-navy bg-white/60 px-3 py-1.5 rounded-lg border border-white shrink-0">
-                {selected.service_type==='boarding'?'🏠 住宿':'✂️ 美容'}
-            </div>
-        </div>
-
-        {/* 修改：當服務類型為住宿時，顯示訂金與尾款編輯欄位 */}
-        {selected.service_type === 'boarding' && (
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-dashed border-lion-gold/30">
-                <DetailRow 
-                    label="已收訂金" 
-                    field="deposit" 
-                    form={editForm} 
-                    setForm={setEditForm} 
-                    editing={isEditing} 
-                    val={selected.deposit} 
-                    type="number" 
-                    isPrice={true} 
-                    userRole={userRole}
-                />
-                <DetailRow 
-                    label="剩餘尾款" 
-                    field="balance" 
-                    form={editForm} 
-                    setForm={setEditForm} 
-                    editing={isEditing} 
-                    val={selected.balance} 
-                    type="number" 
-                    isPrice={true} 
-                    userRole={userRole}
-                />
-            </div>
-        )}
-    </div>
-{/* 修改：增加符號過濾，去除 [" "] 框框 */}
+<Section title="服務內容" icon="credit-card">
 <DetailRow label="服務項目" field="service_tags" form={editForm} setForm={setEditForm} editing={isEditing} val={String(selected.service_tags || '').replace(/[\[\]"]/g, '').replace(/,/g, '、')} full />
-                                            <div className="grid grid-cols-2 gap-4 mt-4">
-                                                <DetailRow label="付款方式" field="payment_method" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.payment_method} />
-                                                {selected.service_type === 'boarding' && (
-                                                    <DetailRow label="房型" field="room_type" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.room_type} />
-                                                )}
-                                            </div>
-                                            {selected.service_type==='boarding' && (
-                                                <div className="grid grid-cols-2 gap-4 mt-2 bg-white p-3 rounded-xl border border-gray-100">
-                                                    <DetailRow label="入住日期" field="check_in_date" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.check_in_date} type="date" />
-                                                    <DetailRow label="退房日期" field="check_out_date" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.check_out_date} type="date" />
-                                                </div>
-                                            )}
-                                        </Section>
+    {selected.service_type === 'boarding' && (
+        <div className="grid grid-cols-2 gap-4 mt-4">
+            <DetailRow label="房型" field="room_type" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.room_type} />
+            <DetailRow label="放風模式" field="temperament" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.temperament} />
+        </div>
+    )}
+    {selected.service_type==='boarding' && (
+        <div className="grid grid-cols-2 gap-4 mt-2 bg-white p-3 rounded-xl border border-gray-100">
+            <DetailRow label="入住日期" field="check_in_date" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.check_in_date} type="date" />
+            <DetailRow label="退房日期" field="check_out_date" form={editForm} setForm={setEditForm} editing={isEditing} val={selected.check_out_date} type="date" />
+        </div>
+    )}
+</Section>
                                     </div>
 
                                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
@@ -1265,39 +1208,24 @@ if (Array.isArray(rawTags)) {
                                         <div className="print-value">個性：{Array.isArray(selected.social_traits) ? selected.social_traits.join('、') : '無'} {selected.personality_other}</div>
                                     </div>
 
-                                    {/* 3. 服務與消費項目 */}
-                                    <div className="print-section-title">💰 服務項目與付款資訊</div>
+                                    {/* 3. 服務項目 */}
+                                    <div className="print-section-title">🧾 服務項目</div>
                                     <div className="print-box">
-                                        <div className="flex justify-between items-center">
-                                            <div>
-<div className="print-label">服務內容</div>
-                                                <div className="print-value text-sm">
-                                                    {selected.service_type === 'boarding' ? '🏠 住宿/安親' : '✂️ 美容服務'}：
-                                                    {(() => {
-                                                        try {
-                                                            // 嘗試解析 JSON，如果是字串則轉為陣列
-                                                            const tags = typeof selected.service_tags === 'string' ? JSON.parse(selected.service_tags) : selected.service_tags;
-                                                            return Array.isArray(tags) ? tags.join('、') : (tags || '無');
-                                                        } catch (e) {
-                                                            return selected.service_tags || '無';
-                                                        }
-                                                    })()}
-                                                </div>
-                                                {selected.service_type === 'boarding' && (
-                                                    <div className="text-[10px] font-bold mt-1" style={{ color: '#1B365D' }}>
-                                                        入住：{selected.check_in_date} ~ {selected.check_out_date} | 房型：{selected.room_type} | 放風：{selected.temperament}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="print-label">總金額 (付款：{selected.payment_method})</div>
-                                                <div className="text-xl font-black" style={{ color: '#1B365D' }}>${selected.total_amount}</div>
-                                            </div>
+                                        <div className="print-label">服務內容</div>
+                                        <div className="print-value text-sm">
+                                            {selected.service_type === 'boarding' ? '🏠 住宿/安親' : '✂️ 美容服務'}：
+                                            {(() => {
+                                                try {
+                                                    const tags = typeof selected.service_tags === 'string' ? JSON.parse(selected.service_tags) : selected.service_tags;
+                                                    return Array.isArray(tags) ? tags.join('、') : (tags || '無');
+                                                } catch (e) {
+                                                    return selected.service_tags || '無';
+                                                }
+                                            })()}
                                         </div>
                                         {selected.service_type === 'boarding' && (
-                                            <div className="mt-2 pt-2 border-t border-dashed flex justify-end gap-6 text-[11px] font-bold">
-                                                <span>已收訂金：${selected.deposit || 0}</span>
-                                                <span style={{ color: '#EF4444' }}>剩餘尾款：${selected.balance || 0}</span>
+                                            <div className="text-[10px] font-bold mt-2" style={{ color: '#1B365D' }}>
+                                                入住：{selected.check_in_date} ~ {selected.check_out_date} | 房型：{selected.room_type} | 放風：{selected.temperament}
                                             </div>
                                         )}
                                     </div>
