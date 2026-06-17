@@ -14,9 +14,9 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
-<script>
+<script type="text/javascript">
         // 1. 初始化 Supabase
         const supabaseUrl = 'https://voicketevnkllfkglicf.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvaWNrZXRldm5rbGxma2dsaWNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2NTExNDMsImV4cCI6MjA4NDIyNzE0M30.8bSOz-desF2gq_Y63tHo5NsHOjOvt25d1QSYRQ8PI_s';
@@ -146,7 +146,15 @@
 
     <div id="root"></div>
 
-    <script type="text/babel">
+    <script>
+        Babel.registerPreset("react-classic", {
+            presets: [
+                [Babel.availablePresets["react"], { "runtime": "classic" }]
+            ]
+        });
+    </script>
+
+    <script type="text/babel" data-presets="react-classic">
         const { useState, useEffect, useRef, useMemo } = React;
 
 const mockSubmit = async (data, currentView) => {
@@ -2186,7 +2194,7 @@ return (
     <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js').then(reg => {
+            navigator.serviceWorker.register('/sw.js?v=2').then(reg => {
                 if (reg.waiting) {
                     showUpdateUI(reg.waiting);
                 }
