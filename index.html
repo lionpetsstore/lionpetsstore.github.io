@@ -977,7 +977,7 @@ const [historyRecords, setHistoryRecords] = useState([]);
                     { name: '家庭房', price: 1200, desc: '多貓共享大空間' }
                 ],
                 dog: [
-                    { name: '小型犬標準房', price: 500, desc: '5公斤以下' },
+                    { name: '小型犬標準房', price: 500, desc: '溫馨小空間' },
                     { name: '標準房', price: 600, desc: '一般小型犬' },
                     { name: '豪華房', price: 800, desc: '寬敞不擁擠' },
                     { name: 'VIP房', price: 1300, desc: '特大獨立空間' }
@@ -2194,7 +2194,7 @@ return (
     <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js?v=2').then(reg => {
+            navigator.serviceWorker.register('/sw.js?v=3').then(reg => {
                 if (reg.waiting) {
                     showUpdateUI(reg.waiting);
                 }
