@@ -1449,6 +1449,7 @@ if (view === 'home') {
         onError={(e)=>{e.target.style.display='none'}}
     />
     <p className="text-lion-gold text-[10px] font-bold tracking-[0.4em] uppercase">Luxury Pet Salon</p>
+            <p className="text-lion-navy text-xs font-bold mt-2 bg-white/60 inline-block px-4 py-1.5 rounded-full shadow-sm backdrop-blur-sm">營業時間：住宿、美容 10:00 - 19:00（無公休）</p>
 </div>
                     <Marquee />
                     <div className="space-y-5 animate-fade-in" style={{animationDelay:'0.1s'}}>
@@ -1549,11 +1550,32 @@ return (
                         </div>
 
                         {view === 'boarding' && (
-                            <section className="glass-premium p-6 md:p-8 space-y-5">
-                                <h3 className="font-bold text-lion-navy border-b border-slate-200 pb-3 flex items-center gap-2 text-lg"><Icon name="home" size={20}/> 住宿環境介紹</h3>
+                            <section className="glass-premium p-6 md:p-8 space-y-6">
+                                <h3 className="font-bold text-lion-navy border-b border-slate-200 pb-3 flex items-center gap-2 text-lg"><Icon name="home" size={20}/> 住宿環境與費用說明</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="bg-[#FFF8E1]/60 p-5 rounded-2xl border border-[#FFE082]/30 backdrop-blur-sm"><h4 className="font-bold text-lion-navy mb-2 flex items-center gap-2 text-base"><Icon name="cat" size={18}/> 一樓：貓咪住宿</h4><p className="text-sm text-slate-600 leading-relaxed text-justify">貓咪專屬樓層，每日消毒、恆溫舒適。獨立空調循環，讓貓貓們能自在曬太陽、窩在柔軟的毯子裡發呆。</p></div>
-                                    <div className="bg-[#E3F2FD]/60 p-5 rounded-2xl border border-[#90CAF9]/30 backdrop-blur-sm"><h4 className="font-bold text-lion-navy mb-2 flex items-center gap-2 text-base"><Icon name="dog" size={18}/> 二樓：狗狗住宿</h4><p className="text-sm text-slate-600 leading-relaxed text-justify">每日陪玩、定時散步。夜間保姆巡房，不只是「寄放」，而是被照顧、被疼愛、被陪伴。</p></div>
+                                    <div className="bg-[#FFF8E1]/60 p-5 rounded-2xl border border-[#FFE082]/30 backdrop-blur-sm">
+                                        <h4 className="font-bold text-lion-navy mb-2 flex items-center gap-2 text-base"><Icon name="cat" size={18}/> 一樓：貓咪住宿</h4>
+                                        <p className="text-sm text-slate-600 leading-relaxed text-justify mb-3">貓咪專屬樓層，每日消毒、恆溫舒適。獨立空調循環，讓貓貓們能自在曬太陽、窩在柔軟的毯子裡發呆。</p>
+                                        <div className="bg-white/80 rounded-xl p-3 border border-[#FFE082]/50 grid grid-cols-3 gap-2 text-center text-xs font-bold text-lion-navy">
+                                            <div><div className="text-slate-500 font-medium">標準房</div><div className="text-lion-gold mt-0.5">$600/晚</div></div>
+                                            <div><div className="text-slate-500 font-medium">豪華房</div><div className="text-lion-gold mt-0.5">$800/晚</div></div>
+                                            <div><div className="text-slate-500 font-medium">家庭房</div><div className="text-lion-gold mt-0.5">$1200/晚</div></div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-[#E3F2FD]/60 p-5 rounded-2xl border border-[#90CAF9]/30 backdrop-blur-sm">
+                                        <h4 className="font-bold text-lion-navy mb-2 flex items-center gap-2 text-base"><Icon name="dog" size={18}/> 二樓：狗狗住宿</h4>
+                                        <p className="text-sm text-slate-600 leading-relaxed text-justify mb-3">每日陪玩、定時散步。夜間保姆巡房，不只是「寄放」，而是被照顧、被疼愛、被陪伴。</p>
+                                        <div className="bg-white/80 rounded-xl p-3 border border-[#90CAF9]/50 grid grid-cols-4 gap-1 text-center text-[10px] font-bold text-lion-navy">
+                                            <div><div className="text-slate-500 font-medium">小型標準</div><div className="text-blue-600 mt-0.5">$500</div></div>
+                                            <div><div className="text-slate-500 font-medium">標準房</div><div className="text-blue-600 mt-0.5">$600</div></div>
+                                            <div><div className="text-slate-500 font-medium">豪華房</div><div className="text-blue-600 mt-0.5">$800</div></div>
+                                            <div><div className="text-slate-500 font-medium">VIP房</div><div className="text-blue-600 mt-0.5">$1300</div></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-4 text-xs text-amber-800 leading-relaxed font-medium">
+                                    <p className="font-bold mb-1 flex items-center gap-1"><Icon name="alert-circle" size={14}/> 房型預約備註：</p>
+                                    您選擇的房型將作為入住偏好參考，並不代表已保留該房型。實際房型將依當日房況、入住天數及毛孩的個別需求，由我們細心安排，提供舒適、最適合的住宿空間及安全的住宿體驗。
                                 </div>
                             </section>
                         )}
@@ -1919,6 +1941,7 @@ return (
                                 <p className="flex items-center gap-2"><Icon name="user" size={16} className="text-lion-gold"/><span className="font-bold text-lion-navy">負責人：</span>顏睿諺</p>
                                 <p className="flex items-center gap-2"><Icon name="phone" size={16} className="text-lion-gold"/><span className="font-bold text-lion-navy">電話：</span>03-360-8693</p>
                                 <p className="md:col-span-2 flex items-start gap-2"><Icon name="map-pin" size={16} className="text-lion-gold mt-0.5 shrink-0"/><span className="font-bold text-lion-navy">地址：</span>桃園市桃園區民族路199-2號</p>
+                                 <p className="flex items-center gap-2"><Icon name="clock" size={16} className="text-lion-gold"/><span className="font-bold text-lion-navy">營業時間：</span>10:00 - 19:00（無公休）</p>
                                 <p className="flex items-center gap-2"><Icon name="file-text" size={16} className="text-lion-gold"/><span className="font-bold text-lion-navy">特寵業字第C1130686號</span></p>
                             </div>
                             <div className="bg-red-50 p-5 rounded-xl text-slate-600 text-xs border border-red-100 space-y-2">
@@ -2066,7 +2089,7 @@ return (
                             <p className="font-bold text-lion-navy text-lg border-b pb-2 mb-4">美容服務 簽署聲明與法律約定</p>
                             <ol className="list-decimal pl-5 space-y-3 marker:text-lion-gold marker:font-bold pb-4 text-justify text-slate-600 text-sm">
                                 <li><strong>第一條(契約目的)：</strong>本服務為犬貓美容，<span className="text-red-500 font-bold underline">不涉及醫療行為</span>。</li>
-                                <li><strong>第五條(健康告知)：</strong>甲方應<span className="font-bold underline">誠實告知</span>寵物病史與是否具有攻擊性。若因隱瞞導致意外，<span className="text-red-500 font-bold">乙方不負責損害賠償責任</span>；因隱瞞導致乙方人員傷亡、財損等損失，<span className="text-red-500 font-bold underline">乙方將全額向甲方求償</span>。</li>
+                                <li><strong>第五條(健康告知)：</strong>甲方應<span className="font-bold underline">誠實告知</span><span className="text-red-500 font-bold"></span>；因隱瞞導致乙方人員傷亡、財損等損失，<span className="text-red-500 font-bold underline"></span>。</li>
                                 <li><strong>第九條(退費規定)：</strong>包月服務終止時，預收總額扣除(<span className="font-bold text-lion-navy">已使用次數 X 單次原價</span>)後退費。</li>
                                 <li><strong>第十二條(逾時接回)：</strong>若於約定時間內未領回，<span className="text-red-500 font-bold">加收安親費</span>；打烊時仍未接回，則<span className="text-red-500 font-bold">視同住宿一晚計費</span>。如經通知三日內未領回，將依照<span className="font-bold underline">動保法第29條</span>移交主管機關。</li>
                                 <li><strong>第十五條(履約保障)：</strong>預收費用累積金額新台幣一萬元以下，依法免提供履約保障。</li>
@@ -2194,7 +2217,7 @@ return (
     <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js?v=3').then(reg => {
+            navigator.serviceWorker.register('/sw.js?v=4').then(reg => {
                 if (reg.waiting) {
                     showUpdateUI(reg.waiting);
                 }
