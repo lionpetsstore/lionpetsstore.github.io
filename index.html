@@ -534,7 +534,7 @@ const HistoryModal = ({ records, onClose, onSelect }) => {
                 <div style="font-weight:bold; color:${BRAND_NAVY}; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:5px;">美容服務 簽署聲明與法律約定</div>
                 <ol style="padding-left: 20px; margin: 0; line-height: 1.8;">
                     <li><strong>第一條(契約目的)：</strong>本服務為犬貓美容，<span style="color:${BRAND_RED}; font-weight:bold; text-decoration:underline;">不涉及醫療行為</span>。</li>
-                    <li><strong>第五條(健康告知)：</strong>甲方應<span style="font-weight:bold; text-decoration:underline;">誠實告知</span>寵物病史與是否具有攻擊性。若因隱瞞導致意外，<span style="color:${BRAND_RED}; font-weight:bold;">乙方不負責損害賠償責任</span>；因隱瞞導致乙方人員傷亡、財損等損失，<span style="color:${BRAND_RED}; font-weight:bold; text-decoration:underline;">乙方將全額向甲方求償</span>。</li>
+                    <li><strong>第五條(健康告知)：</strong>甲方應<span style="font-weight:bold; text-decoration:underline;">誠實告知</span>寵物之病史與是否具有攻擊性。若因甲方隱瞞前述資訊，導致意外發生、乙方人員受傷或財物損失，甲方應依法負擔相應之損害賠償責任。</li>
                     <li><strong>第九條(退費規定)：</strong>包月服務終止時，預收總額扣除(<span style="font-weight:bold; color:${BRAND_NAVY};">已使用次數 X 單次原價</span>)後退費。</li>
                     <li><strong>第十二條(逾時接回)：</strong>若於約定時間內未領回，<span style="color:${BRAND_RED}; font-weight:bold;">加收安親費</span>；打烊時仍未接回，則<span style="color:${BRAND_RED}; font-weight:bold;">視同住宿一晚計費</span>。如經通知三日內未領回，將依照<span style="font-weight:bold; text-decoration:underline;">動保法第29條</span>移交主管機關。</li>
                     <li><strong>第十五條(履約保障)：</strong>預收費用累積金額新台幣一萬元以下，依法免提供履約保障。</li>
@@ -2089,7 +2089,7 @@ return (
                             <p className="font-bold text-lion-navy text-lg border-b pb-2 mb-4">美容服務 簽署聲明與法律約定</p>
                             <ol className="list-decimal pl-5 space-y-3 marker:text-lion-gold marker:font-bold pb-4 text-justify text-slate-600 text-sm">
                                 <li><strong>第一條(契約目的)：</strong>本服務為犬貓美容，<span className="text-red-500 font-bold underline">不涉及醫療行為</span>。</li>
-                                <li><strong>第五條(健康告知)：</strong>甲方應<span className="font-bold underline">誠實告知</span><span className="text-red-500 font-bold"></span>；因隱瞞導致乙方人員傷亡、財損等損失，<span className="text-red-500 font-bold underline"></span>。</li>
+                                <li><strong>第五條(健康告知)：</strong>甲方應<span className="font-bold underline">誠實告知</span>寵物之病史與是否具有攻擊性。若因甲方隱瞞前述資訊，導致意外發生、乙方人員受傷或財物損失，甲方應依法負擔相應之損害賠償責任。</li>
                                 <li><strong>第九條(退費規定)：</strong>包月服務終止時，預收總額扣除(<span className="font-bold text-lion-navy">已使用次數 X 單次原價</span>)後退費。</li>
                                 <li><strong>第十二條(逾時接回)：</strong>若於約定時間內未領回，<span className="text-red-500 font-bold">加收安親費</span>；打烊時仍未接回，則<span className="text-red-500 font-bold">視同住宿一晚計費</span>。如經通知三日內未領回，將依照<span className="font-bold underline">動保法第29條</span>移交主管機關。</li>
                                 <li><strong>第十五條(履約保障)：</strong>預收費用累積金額新台幣一萬元以下，依法免提供履約保障。</li>
@@ -2217,7 +2217,7 @@ return (
     <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js?v=4').then(reg => {
+            navigator.serviceWorker.register('/sw.js?v=5').then(reg => {
                 if (reg.waiting) {
                     showUpdateUI(reg.waiting);
                 }
