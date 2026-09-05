@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lion-index-v1';
+const CACHE_NAME = 'lion-index-v2';
 const OFFLINE_URLS = [
     '/',
     '/index.html',

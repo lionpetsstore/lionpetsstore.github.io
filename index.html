@@ -1555,27 +1555,25 @@ return (
                         {view === 'boarding' && (
                             <section className="glass-premium p-6 md:p-8 space-y-6">
                                 <h3 className="font-bold text-lion-navy border-b border-slate-200 pb-3 flex items-center gap-2 text-lg"><Icon name="home" size={20}/> 住宿環境與費用說明</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="bg-[#FFF8E1]/60 p-5 rounded-2xl border border-[#FFE082]/30 backdrop-blur-sm">
-                                        <h4 className="font-bold text-lion-navy mb-2 flex items-center gap-2 text-base"><Icon name="cat" size={18}/> 一樓：貓咪住宿</h4>
-                                        <p className="text-sm text-slate-600 leading-relaxed text-justify mb-3">貓咪專屬樓層，每日消毒、恆溫舒適。獨立空調循環，讓貓貓們能自在曬太陽、窩在柔軟的毯子裡發呆。</p>
-                                        <div className="bg-white/80 rounded-xl p-3 border border-[#FFE082]/50 grid grid-cols-3 gap-2 text-center text-xs font-bold text-lion-navy">
-                                            <div><div className="text-slate-500 font-medium">標準房</div><div className="text-lion-gold mt-0.5">$600/晚</div></div>
-                                            <div><div className="text-slate-500 font-medium">豪華房</div><div className="text-lion-gold mt-0.5">$800/晚</div></div>
-                                            <div><div className="text-slate-500 font-medium">家庭房</div><div className="text-lion-gold mt-0.5">$1200/晚</div></div>
-                                        </div>
-                                    </div>
-                                    <div className="bg-[#E3F2FD]/60 p-5 rounded-2xl border border-[#90CAF9]/30 backdrop-blur-sm">
-                                        <h4 className="font-bold text-lion-navy mb-2 flex items-center gap-2 text-base"><Icon name="dog" size={18}/> 二樓：狗狗住宿</h4>
-                                        <p className="text-sm text-slate-600 leading-relaxed text-justify mb-3">每日陪玩、定時散步。夜間保姆巡房，不只是「寄放」，而是被照顧、被疼愛、被陪伴。</p>
-                                        <div className="bg-white/80 rounded-xl p-3 border border-[#90CAF9]/50 grid grid-cols-4 gap-1 text-center text-[10px] font-bold text-lion-navy">
-                                            <div><div className="text-slate-500 font-medium">小型標準</div><div className="text-blue-600 mt-0.5">$500</div></div>
-                                            <div><div className="text-slate-500 font-medium">標準房</div><div className="text-blue-600 mt-0.5">$600</div></div>
-                                            <div><div className="text-slate-500 font-medium">豪華房</div><div className="text-blue-600 mt-0.5">$800</div></div>
-                                            <div><div className="text-slate-500 font-medium">VIP房</div><div className="text-blue-600 mt-0.5">$1300</div></div>
-                                        </div>
-                                    </div>
-                                </div>
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="bg-[#FFF8E1]/60 p-5 rounded-2xl border border-[#FFE082]/30 backdrop-blur-sm">
+        <h4 className="font-bold text-lion-navy mb-2 flex items-center gap-2 text-base"><Icon name="cat" size={18}/> 一樓：貓咪住宿</h4>
+        <div className="bg-white/80 rounded-xl p-3 border border-[#FFE082]/50 grid grid-cols-3 gap-2 text-center text-xs font-bold text-lion-navy">
+            <div><div className="text-slate-500 font-medium">標準房</div><div className="text-lion-gold mt-0.5">$600/晚</div></div>
+            <div><div className="text-slate-500 font-medium">豪華房</div><div className="text-lion-gold mt-0.5">$800/晚</div></div>
+            <div><div className="text-slate-500 font-medium">家庭房</div><div className="text-lion-gold mt-0.5">$1200/晚</div></div>
+        </div>
+    </div>
+    <div className="bg-[#E3F2FD]/60 p-5 rounded-2xl border border-[#90CAF9]/30 backdrop-blur-sm">
+        <h4 className="font-bold text-lion-navy mb-2 flex items-center gap-2 text-base"><Icon name="dog" size={18}/> 二樓：狗狗住宿</h4>
+        <div className="bg-white/80 rounded-xl p-3 border border-[#90CAF9]/50 grid grid-cols-4 gap-1 text-center text-[10px] font-bold text-lion-navy">
+            <div><div className="text-slate-500 font-medium">小型標準</div><div className="text-blue-600 mt-0.5">$500</div></div>
+            <div><div className="text-slate-500 font-medium">標準房</div><div className="text-blue-600 mt-0.5">$600</div></div>
+            <div><div className="text-slate-500 font-medium">豪華房</div><div className="text-blue-600 mt-0.5">$800</div></div>
+            <div><div className="text-slate-500 font-medium">VIP房</div><div className="text-blue-600 mt-0.5">$1300</div></div>
+        </div>
+    </div>
+</div>
                                 <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-4 text-xs text-amber-800 leading-relaxed font-medium">
                                     <p className="font-bold mb-1 flex items-center gap-1"><Icon name="alert-circle" size={14}/> 房型預約備註：</p>
                                     您選擇的房型將作為入住偏好參考，並不代表已保留該房型。實際房型將依當日房況、入住天數及毛孩的個別需求，由我們細心安排，提供舒適、最適合的住宿空間及安全的住宿體驗。
@@ -2220,7 +2218,7 @@ return (
     <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js?v=6').then(reg => {
+            navigator.serviceWorker.register('/sw.js?v=7').then(reg => {
                 if (reg.waiting) {
                     showUpdateUI(reg.waiting);
                 }
